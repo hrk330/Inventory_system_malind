@@ -1,6 +1,9 @@
 # Use Node.js 18 Alpine image
 FROM node:18-alpine
 
+# Install required system dependencies for Prisma
+RUN apk add --no-cache openssl1.1-compat
+
 # Set working directory
 WORKDIR /app
 
