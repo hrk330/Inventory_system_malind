@@ -6,7 +6,6 @@ RUN apk add --no-cache openssl1.1-compat
 
 # Set working directory
 WORKDIR /app
-
 # Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
