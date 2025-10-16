@@ -49,7 +49,7 @@ export default function CategoriesPage() {
   const { data: session, status } = useSession()
 
   // Fetch categories with product counts
-  const { data: categories, isLoading, error } = useQuery({
+  const { data: categories, isLoading, error } = useQuery<Category[]>({
     queryKey: ['categories', search],
     queryFn: async () => {
       console.log('🏷️ Fetching categories with search:', search)
@@ -238,7 +238,7 @@ export default function CategoriesPage() {
     if (selectedCategories.length === categories?.length) {
       setSelectedCategories([])
     } else {
-      setSelectedCategories(categories?.map(c => c.id) || [])
+      setSelectedCategories(categories?.map((c: Category) => c.id) || [])
     }
   }
 

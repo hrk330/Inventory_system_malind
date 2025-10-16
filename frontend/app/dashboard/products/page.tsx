@@ -142,6 +142,39 @@ interface ProductFormData {
   images?: string[]
 }
 
+interface Category {
+  id: string
+  name: string
+  description?: string
+  imageUrl?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface UOM {
+  id: string
+  name: string
+  symbol: string
+  description?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  productCount?: number
+}
+
+interface Supplier {
+  id: string
+  name: string
+  contactPerson?: string
+  email?: string
+  phone?: string
+  address?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export default function ProductsPage() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -170,7 +203,7 @@ export default function ProductsPage() {
   const { data: session, status } = useSession()
 
   // Fetch UOMs for the form
-  const { data: uoms } = useQuery({
+  const { data: uoms } = useQuery<UOM[]>({
     queryKey: ['uoms'],
     queryFn: async () => {
       const response = await apiClient.get('/uoms')
@@ -195,7 +228,7 @@ export default function ProductsPage() {
       // Invalidate and refetch products
       await queryClient.invalidateQueries({ queryKey: ['products'] })
       console.log('✅ Products refreshed successfully - showing all products')
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error refreshing products:', error)
     } finally {
       setIsRefreshing(false)
@@ -213,7 +246,7 @@ export default function ProductsPage() {
   }
 
   // Fetch products
-  const { data: products, isLoading, error } = useQuery({
+  const { data: products, isLoading, error } = useQuery<Product[]>({
     queryKey: ['products', search, categoryFilter, statusFilter],
     queryFn: async () => {
       console.log('🔍 Fetching products with search:', search, 'category:', categoryFilter, 'status:', statusFilter)
@@ -234,7 +267,7 @@ export default function ProductsPage() {
         const response = await apiClient.get(`/products?${params.toString()}`)
         console.log('✅ Products fetched successfully:', response.data)
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error fetching products:', error)
         throw error
       }
@@ -242,7 +275,7 @@ export default function ProductsPage() {
   })
 
   // Fetch categories
-  const { data: categories } = useQuery({
+  const { data: categories } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: async () => {
       console.log('🏷️ Fetching categories...')
@@ -250,7 +283,7 @@ export default function ProductsPage() {
         const response = await apiClient.get('/categories')
         console.log('✅ Categories fetched successfully:', response.data)
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error fetching categories:', error)
         throw error
       }
@@ -258,7 +291,7 @@ export default function ProductsPage() {
   })
 
   // Fetch suppliers
-  const { data: suppliers } = useQuery({
+  const { data: suppliers } = useQuery<Supplier[]>({
     queryKey: ['suppliers'],
     queryFn: async () => {
       console.log('🏢 Fetching suppliers...')
@@ -266,7 +299,7 @@ export default function ProductsPage() {
         const response = await apiClient.get('/suppliers')
         console.log('✅ Suppliers fetched successfully:', response.data)
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error fetching suppliers:', error)
         throw error
       }
@@ -285,7 +318,7 @@ export default function ProductsPage() {
         const response = await apiClient.post('/products', cleanData)
         console.log('✅ Product created successfully:', response.data)
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error creating product:', error)
         console.error('❌ Error details:', error.response?.data)
         throw error
@@ -312,7 +345,7 @@ export default function ProductsPage() {
         console.log('✅ Product updated successfully:', response.data)
         console.log('📊 Response stock balances:', response.data.stockBalances)
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error updating product:', error)
         throw error
       }
@@ -341,7 +374,7 @@ export default function ProductsPage() {
         const response = await apiClient.delete(`/products/${id}`)
         console.log('✅ Product deleted successfully')
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error deleting product:', error)
         throw error
       }
@@ -363,7 +396,7 @@ export default function ProductsPage() {
         })
         console.log('✅ Products bulk deleted successfully')
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error bulk deleting products:', error)
         throw error
       }
@@ -490,7 +523,7 @@ export default function ProductsPage() {
     if (selectedProducts.length === products?.length) {
       setSelectedProducts([])
     } else {
-      setSelectedProducts(products?.map(p => p.id) || [])
+      setSelectedProducts(products?.map((p: Product) => p.id) || [])
     }
   }
 
@@ -744,7 +777,7 @@ export default function ProductsPage() {
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="no-category">No Category</SelectItem>
-              {categories?.map((category: any) => (
+              {categories?.map((category: Category) => (
                 <SelectItem key={category.id} value={category.name}>
                   {category.name}
                 </SelectItem>
@@ -1056,7 +1089,7 @@ export default function ProductsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="no-category">No Category</SelectItem>
-                  {categories?.map((category: any) => (
+                  {categories?.map((category: Category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>
@@ -1094,7 +1127,7 @@ export default function ProductsPage() {
                   <SelectValue placeholder="Select UOM" />
                 </SelectTrigger>
                 <SelectContent>
-                  {uoms?.map((uom: any) => (
+                  {uoms?.map((uom: UOM) => (
                     <SelectItem key={uom.id} value={uom.id}>
                       {uom.name} ({uom.symbol})
                     </SelectItem>
@@ -1134,7 +1167,7 @@ export default function ProductsPage() {
                 <div>
                   <Label htmlFor="edit-supplier">Supplier</Label>
                   <Select onValueChange={(value) => {
-                    const supplier = suppliers?.find(s => s.id === value)
+                    const supplier = suppliers?.find((s: Supplier) => s.id === value)
                     setValue('supplierId', value)
                     setValue('supplierName', supplier?.name || '')
                   }}>
@@ -1142,7 +1175,7 @@ export default function ProductsPage() {
                       <SelectValue placeholder="Select supplier" />
                     </SelectTrigger>
                     <SelectContent>
-                      {suppliers?.map((supplier: any) => (
+                      {suppliers?.map((supplier: Supplier) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           {supplier.name}
                         </SelectItem>

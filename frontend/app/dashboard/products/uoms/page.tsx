@@ -46,7 +46,7 @@ export default function UOMsPage() {
   const { data: session, status } = useSession()
 
   // Fetch UOMs with product counts
-  const { data: uoms, isLoading, error } = useQuery({
+  const { data: uoms, isLoading, error } = useQuery<UOM[]>({
     queryKey: ['uoms', search],
     queryFn: async () => {
       console.log('📏 Fetching UOMs with search:', search)
@@ -167,7 +167,7 @@ export default function UOMsPage() {
       })
     } else {
       // Check if symbol already exists
-      const existingUOM = uoms?.find(uom => uom.symbol.toLowerCase() === data.symbol.toLowerCase())
+      const existingUOM = uoms?.find((uom: UOM) => uom.symbol.toLowerCase() === data.symbol.toLowerCase())
       if (existingUOM) {
         alert(`A UOM with symbol "${data.symbol}" already exists. Please choose a different symbol.`)
         return

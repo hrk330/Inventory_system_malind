@@ -34,6 +34,39 @@ interface ProductFormData {
   images?: string[]
 }
 
+interface Supplier {
+  id: string
+  name: string
+  contactPerson?: string
+  email?: string
+  phone?: string
+  address?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface Category {
+  id: string
+  name: string
+  description?: string
+  imageUrl?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface UOM {
+  id: string
+  name: string
+  symbol: string
+  description?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  productCount?: number
+}
+
 export default function AddProductPage() {
   const [autoGenerateSku, setAutoGenerateSku] = useState(true)
   const [newCategory, setNewCategory] = useState('')
@@ -49,7 +82,7 @@ export default function AddProductPage() {
   const { data: session, status } = useSession()
 
   // Fetch categories
-  const { data: categories } = useQuery({
+  const { data: categories } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: async () => {
       try {
@@ -63,7 +96,7 @@ export default function AddProductPage() {
   })
 
   // Fetch UOMs
-  const { data: uoms } = useQuery({
+  const { data: uoms } = useQuery<UOM[]>({
     queryKey: ['uoms'],
     queryFn: async () => {
       try {
@@ -77,7 +110,7 @@ export default function AddProductPage() {
   })
 
   // Fetch suppliers
-  const { data: suppliers } = useQuery({
+  const { data: suppliers } = useQuery<Supplier[]>({
     queryKey: ['suppliers'],
     queryFn: async () => {
       try {
@@ -366,7 +399,7 @@ export default function AddProductPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no-category">No Category</SelectItem>
-                      {categories?.map((category: any) => (
+                      {categories?.map((category: Category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
@@ -436,7 +469,7 @@ export default function AddProductPage() {
                       setValue('supplierId', undefined)
                       setValue('supplierName', undefined)
                     } else {
-                      const supplier = suppliers?.find(s => s.id === value)
+                      const supplier = suppliers?.find((s: Supplier) => s.id === value)
                       setValue('supplierId', value)
                       setValue('supplierName', supplier?.name || '')
                     }
@@ -446,7 +479,7 @@ export default function AddProductPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no-supplier">No Supplier</SelectItem>
-                      {suppliers?.map((supplier: any) => (
+                      {suppliers?.map((supplier: Supplier) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           {supplier.name}
                         </SelectItem>
@@ -494,7 +527,7 @@ export default function AddProductPage() {
                       <SelectValue placeholder="Select UOM" />
                     </SelectTrigger>
                     <SelectContent>
-                      {uoms?.map((uom: any) => (
+                      {uoms?.map((uom: UOM) => (
                         <SelectItem key={uom.id} value={uom.id}>
                           {uom.name} ({uom.symbol})
                         </SelectItem>

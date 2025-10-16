@@ -215,7 +215,7 @@ export default function StocktakePage() {
                 {stocktakeMutation.error && (
                   <div className="bg-red-50 border border-red-200 rounded-md p-3">
                     <p className="text-sm text-red-600">
-                      Error: {stocktakeMutation.error.response?.data?.message || 'Failed to record stock count'}
+                      Error: {(stocktakeMutation.error as any)?.response?.data?.message || 'Failed to record stock count'}
                     </p>
                   </div>
                 )}
