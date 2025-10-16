@@ -101,7 +101,15 @@ export default function AddProductPage() {
         return response.data
       } catch (error) {
         console.error('❌ Error creating product:', error)
-        console.error('❌ Error details:', error.response?.data)
+        
+        // Type guard to safely access error properties
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as any
+          console.error('❌ Error details:', axiosError.response?.data)
+        } else {
+          console.error('❌ Error details:', error)
+        }
+        
         throw error
       }
     },
