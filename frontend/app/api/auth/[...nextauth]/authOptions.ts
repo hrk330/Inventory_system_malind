@@ -44,13 +44,20 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (error) {
           console.error('Auth error:', error)
-          if (error.response) {
-            console.error('Error response status:', error.response.status)
-            console.error('Error response data:', error.response.data)
-          } else if (error.request) {
-            console.error('No response received:', error.request)
+          
+          // Type guard to check if error is an AxiosError
+          if (error && typeof error === 'object' && 'response' in error) {
+            const axiosError = error as any
+            console.error('Error response status:', axiosError.response?.status)
+            console.error('Error response data:', axiosError.response?.data)
+          } else if (error && typeof error === 'object' && 'request' in error) {
+            const axiosError = error as any
+            console.error('No response received:', axiosError.request)
+          } else if (error && typeof error === 'object' && 'message' in error) {
+            const errorWithMessage = error as any
+            console.error('Error setting up request:', errorWithMessage.message)
           } else {
-            console.error('Error setting up request:', error.message)
+            console.error('Unknown error occurred:', error)
           }
         }
 
