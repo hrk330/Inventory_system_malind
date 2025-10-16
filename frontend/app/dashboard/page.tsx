@@ -6,26 +6,34 @@ import { apiClient } from '@/lib/api-client'
 import { Package, MapPin, AlertTriangle, TrendingUp } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { data: products, isLoading: productsLoading } = useQuery({
+  const { data: products, isLoading: productsLoading, error: productsError } = useQuery({
     queryKey: ['products', 'dashboard'],
     queryFn: () => apiClient.get('/products?status=active').then(res => res.data),
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  const { data: locations, isLoading: locationsLoading } = useQuery({
+  const { data: locations, isLoading: locationsLoading, error: locationsError } = useQuery({
     queryKey: ['locations'],
     queryFn: () => apiClient.get('/locations').then(res => res.data),
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  const { data: stockBalances, isLoading: balancesLoading } = useQuery({
+  const { data: stockBalances, isLoading: balancesLoading, error: balancesError } = useQuery({
     queryKey: ['stock-balances'],
     queryFn: () => apiClient.get('/stock/balances').then(res => res.data),
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  const { data: reorderAlerts, isLoading: alertsLoading } = useQuery({
+  const { data: reorderAlerts, isLoading: alertsLoading, error: alertsError } = useQuery({
     queryKey: ['reorder-alerts'],
     queryFn: () => apiClient.get('/reorder/alerts').then(res => res.data),
     refetchInterval: 30000, // Auto-refresh every 30 seconds
     refetchOnWindowFocus: true,
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
   const totalProducts = products?.length || 0
@@ -63,6 +71,24 @@ export default function DashboardPage() {
       bgColor: 'bg-red-100',
     },
   ]
+
+  // Handle errors
+  if (productsError || locationsError || balancesError || alertsError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to load dashboard data</h2>
+          <p className="text-gray-600 mb-4">There was an error connecting to the server.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (productsLoading || locationsLoading || balancesLoading || alertsLoading) {
     return (
@@ -111,23 +137,29 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stockBalances?.slice(0, 5).map((balance: any, index: number) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {balance.product?.name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {balance.location?.name}
-                    </p>
+              {stockBalances && stockBalances.length > 0 ? (
+                stockBalances.slice(0, 5).map((balance: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {balance.product?.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {balance.location?.name}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">
+                        {balance.quantity} {balance.product?.unit}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
-                      {balance.quantity} {balance.product?.unit}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">
+                  No stock data available
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -141,25 +173,26 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {reorderAlerts?.slice(0, 5).map((alert: any, index: number) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {alert.product?.name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {alert.location?.name}
-                    </p>
+              {reorderAlerts && reorderAlerts.length > 0 ? (
+                reorderAlerts.slice(0, 5).map((alert: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {alert.product?.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {alert.location?.name}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-red-600">
+                        {alert.quantity} / {alert.product?.reorderLevel}
+                      </p>
+                      <p className="text-xs text-gray-500">Low Stock</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-red-600">
-                      {alert.quantity} / {alert.product?.reorderLevel}
-                    </p>
-                    <p className="text-xs text-gray-500">Low Stock</p>
-                  </div>
-                </div>
-              ))}
-              {reorderAlerts?.length === 0 && (
+                ))
+              ) : (
                 <p className="text-sm text-gray-500 text-center py-4">
                   No reorder alerts at this time
                 </p>
