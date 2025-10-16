@@ -14,11 +14,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-
-# Build the application
-RUN npm run build
+# Build the application and generate Prisma client
+RUN npm run railway:build
 
 # Remove dev dependencies
 RUN npm prune --production
@@ -27,4 +24,4 @@ RUN npm prune --production
 EXPOSE 5000
 
 # Start the application
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "railway:start"]
