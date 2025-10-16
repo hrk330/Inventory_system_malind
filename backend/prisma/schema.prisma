@@ -1,0 +1,258 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(STAFF)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  createdTransactions StockTransaction[]
+  performedStocktakes Stocktake[]
+  auditLogs          AuditLog[]
+  bulkImportRecords  BulkImportRecord[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  imageUrl    String?  @map("image_url")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id           String    @id @default(uuid())
+  name         String
+  sku          String    @unique
+  categoryId   String?   @map("category_id")
+  uomId        String    @map("uom_id")
+  reorderLevel Float     @default(0) @map("reorder_level")
+  description  String?
+  barcode      String?   @unique
+  supplierId   String?   @map("supplier_id")
+  supplierName String?   @map("supplier_name")
+  costPrice    Decimal?  @map("cost_price") @db.Decimal(10, 2)
+  sellingPrice Decimal?  @map("selling_price") @db.Decimal(10, 2)
+  minStock     Int       @default(0) @map("min_stock")
+  maxStock     Int?      @map("max_stock")
+  isActive     Boolean   @default(true) @map("is_active")
+  images       String[]  @default([])
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  stockBalances     StockBalance[]
+  stockTransactions StockTransaction[]
+  stocktakes        Stocktake[]
+  variants          ProductVariant[]
+  supplier          Supplier? @relation(fields: [supplierId], references: [id])
+  uom               UOM       @relation(fields: [uomId], references: [id])
+  category          Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("products")
+}
+
+model Location {
+  id        String       @id @default(uuid())
+  name      String
+  type      LocationType
+  address   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  stockBalances     StockBalance[]
+  fromTransactions  StockTransaction[] @relation("FromLocation")
+  toTransactions    StockTransaction[] @relation("ToLocation")
+  stocktakes        Stocktake[]
+
+  @@map("locations")
+}
+
+model StockBalance {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  locationId  String   @map("location_id")
+  quantity    Float
+  lastUpdated DateTime @default(now()) @map("last_updated")
+
+  // Relations
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, locationId])
+  @@map("stock_balances")
+}
+
+model StockTransaction {
+  id             String            @id @default(uuid())
+  productId      String            @map("product_id")
+  fromLocationId String?           @map("from_location_id")
+  toLocationId   String?           @map("to_location_id")
+  type           TransactionType
+  quantity       Float
+  referenceNo    String?           @map("reference_no")
+  remarks        String?
+  createdBy      String            @map("created_by")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fromLocation Location? @relation("FromLocation", fields: [fromLocationId], references: [id])
+  toLocation   Location? @relation("ToLocation", fields: [toLocationId], references: [id])
+  creator      User      @relation(fields: [createdBy], references: [id])
+
+  @@map("stock_transactions")
+}
+
+model Stocktake {
+  id               String   @id @default(uuid())
+  productId        String   @map("product_id")
+  locationId       String   @map("location_id")
+  countedQuantity  Float    @map("counted_quantity")
+  systemQuantity   Float    @map("system_quantity")
+  adjustment       Float
+  performedBy      String   @map("performed_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relations
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location    Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  performer   User     @relation(fields: [performedBy], references: [id])
+
+  @@map("stocktakes")
+}
+
+model AuditLog {
+  id         String     @id @default(uuid())
+  userId     String     @map("user_id")
+  entityName String     @map("entity_name")
+  entityId   String     @map("entity_id")
+  action     AuditAction
+  oldValue   Json?      @map("old_value")
+  newValue   Json?      @map("new_value")
+  timestamp  DateTime   @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+enum LocationType {
+  WAREHOUSE
+  STORE
+}
+
+enum TransactionType {
+  RECEIPT
+  ISSUE
+  TRANSFER
+  ADJUSTMENT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model Supplier {
+  id           String   @id @default(uuid())
+  name         String
+  contactPerson String? @map("contact_person")
+  email        String?
+  phone        String?
+  address      String?
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  products Product[]
+
+  @@map("suppliers")
+}
+
+model UOM {
+  id          String   @id @default(uuid())
+  name        String
+  symbol      String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  products Product[]
+
+  @@map("uoms")
+}
+
+model ProductVariant {
+  id             String   @id @default(uuid())
+  productId      String   @map("product_id")
+  variantName    String   @map("variant_name")
+  variantValue   String   @map("variant_value")
+  sku            String   @unique
+  barcode        String?  @unique
+  additionalPrice Decimal? @map("additional_price") @db.Decimal(10, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_variants")
+}
+
+model BulkImportRecord {
+  id               String   @id @default(uuid())
+  fileName         String   @map("file_name")
+  originalFileName String   @map("original_file_name")
+  status           String   // 'pending', 'processing', 'completed', 'failed'
+  totalRecords     Int      @map("total_records")
+  successfulRecords Int     @map("successful_records")
+  failedRecords    Int      @map("failed_records")
+  errors           String[] // Array of error messages
+  userId           String   @map("user_id")
+  summary          Json?    // Summary of what was created/updated
+  createdAt        DateTime @default(now()) @map("created_at")
+  completedAt      DateTime? @map("completed_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("bulk_import_records")
+}
