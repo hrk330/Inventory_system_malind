@@ -11,9 +11,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { apiClient } from '@/lib/api-client'
-import { Plus, Search, Edit, Trash2, Tag, RefreshCw, X, CheckCircle, Grid3X3, List } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Tag, RefreshCw, X, CheckCircle, Grid3X3, List, Eye } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 interface Category {
   id: string
@@ -47,6 +48,7 @@ export default function CategoriesPage() {
   
   const queryClient = useQueryClient()
   const { data: session, status } = useSession()
+  const router = useRouter()
 
   // Fetch categories with product counts
   const { data: categories, isLoading, error } = useQuery<Category[]>({
@@ -248,6 +250,11 @@ export default function CategoriesPage() {
     }
   }
 
+  const handleViewProducts = (categoryId: string, categoryName: string) => {
+    // Navigate to products page with category filter
+    router.push(`/dashboard/products?category=${categoryId}&categoryName=${encodeURIComponent(categoryName)}`)
+  }
+
   const confirmBulkDelete = () => {
     if (selectedCategories.length > 0) {
       bulkDeleteMutation.mutate(selectedCategories)
@@ -439,6 +446,17 @@ export default function CategoriesPage() {
                 )}
                 <div className="flex gap-2">
                   <Button
+                    variant="default"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleViewProducts(category.id, category.name)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View Products
+                  </Button>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Button
                     variant="outline"
                     size="sm"
                     className="flex-1"
@@ -524,9 +542,18 @@ export default function CategoriesPage() {
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleViewProducts(category.id, category.name)}
+                          title="View Products"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleEdit(category)}
+                          title="Edit Category"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -535,6 +562,7 @@ export default function CategoriesPage() {
                           size="sm"
                           onClick={() => handleDelete(category.id, category.name)}
                           disabled={deleteMutation.isPending}
+                          title="Delete Category"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

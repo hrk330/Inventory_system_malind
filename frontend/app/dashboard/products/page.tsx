@@ -15,7 +15,7 @@ import { apiClient } from '@/lib/api-client'
 import { Plus, Search, Edit, Trash2, Eye, Filter, X, Tag, Settings, RefreshCw, Upload } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 
 // Custom hook for debounced search
@@ -201,6 +201,29 @@ export default function ProductsPage() {
   const queryClient = useQueryClient()
   const router = useRouter()
   const { data: session, status } = useSession()
+  const searchParams = useSearchParams()
+
+  // Handle URL parameters for category filtering
+  useEffect(() => {
+    const categoryParam = searchParams.get('category')
+    const categoryNameParam = searchParams.get('categoryName')
+    
+    if (categoryParam) {
+      setCategoryFilter(categoryParam)
+      // Show a toast message indicating filtered view
+      if (categoryNameParam) {
+        setToast({
+          message: `Showing products in category: ${decodeURIComponent(categoryNameParam)}`,
+          type: 'info',
+          isVisible: true
+        })
+        // Hide toast after 5 seconds
+        setTimeout(() => {
+          setToast(prev => ({ ...prev, isVisible: false }))
+        }, 5000)
+      }
+    }
+  }, [searchParams])
 
   // Fetch UOMs for the form
   const { data: uoms } = useQuery<UOM[]>({
@@ -778,12 +801,30 @@ export default function ProductsPage() {
               <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="no-category">No Category</SelectItem>
               {categories?.map((category: Category) => (
-                <SelectItem key={category.id} value={category.name}>
+                <SelectItem key={category.id} value={category.id}>
                   {category.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {categoryFilter !== 'all' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setCategoryFilter('all')
+                // Clear URL parameters
+                const url = new URL(window.location.href)
+                url.searchParams.delete('category')
+                url.searchParams.delete('categoryName')
+                router.replace(url.pathname + url.search)
+              }}
+              className="ml-2"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear Category Filter
+            </Button>
+          )}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Filter by status" />
