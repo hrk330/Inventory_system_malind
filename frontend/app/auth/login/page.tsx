@@ -6,15 +6,16 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import Link from 'next/link'
+import { Eye, EyeOff, Package, BarChart3, Users, Shield, ArrowRight, CheckCircle } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,74 +48,207 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Inventory Management System
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Sign in to your account
-          </p>
+    <div className="min-h-screen flex">
+      {/* Left Section - Marketing Content */}
+      <div className="hidden lg:flex lg:w-[65%] relative overflow-hidden">
+        {/* Video Background */}
+        <div className="absolute inset-0">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+          >
+            <source src="/videos/background.mp4" type="video/mp4" />
+            {/* Fallback image if video doesn't load */}
+            <div className="w-full h-full bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800"></div>
+          </video>
+          {/* Overlay for text readability */}
+          <div className="absolute inset-0 bg-black/40"></div>
+        </div>
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center px-12 py-16 text-white">
+          <div className="max-w-md">
+            {/* Logo */}
+            <div className="flex items-center mb-12">
+              <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mr-8 p-1 shadow-2xl border-2 border-white">
+                <Image
+                  src="/images/logo.png"
+                  alt="Malind Tech Logo"
+                  width={110}
+                  height={110}
+                  className="object-contain drop-shadow-lg"
+                />
+              </div>
+              <div>
+                <h1 className="text-5xl font-bold text-white drop-shadow-lg">Malind Tech</h1>
+                <p className="text-blue-100 text-2xl font-semibold">Inventory Management</p>
+              </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="space-y-6">
+              <h2 className="text-4xl font-bold leading-tight">
+                The Most Advanced
+                <span className="block text-blue-200">Inventory System</span>
+              </h2>
+              
+              <p className="text-lg text-blue-100 leading-relaxed">
+                Manage your products, suppliers, stock levels, and reporting seamlessly. 
+                Built for modern businesses that demand efficiency and control.
+              </p>
+
+              {/* Features */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <span className="text-blue-100">Real-time stock tracking</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <span className="text-blue-100">Advanced reporting & analytics</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <span className="text-blue-100">Multi-location support</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <span className="text-blue-100">Automated reorder alerts</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-12 pt-8 border-t border-white/20">
+              <p className="text-blue-200 text-sm">
+                Specially Designed for Every Business
+              </p>
+              <p className="text-blue-300 text-xs mt-2">
+                Developed by Malind Tech Solutions
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Section - Login Form */}
+      <div className="w-full lg:w-[35%] flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-8 relative overflow-hidden">
+        {/* Tech Pattern Overlay */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-10 right-10 w-32 h-32 bg-green-400 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 left-10 w-24 h-24 bg-blue-400 rounded-full blur-2xl"></div>
+          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-purple-400 rounded-full blur-xl"></div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="w-full max-w-md relative z-10">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center justify-center mb-10">
+            <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl flex items-center justify-center mr-6 p-1 shadow-2xl border border-white/20">
+              <Image
+                src="/images/logo.png"
+                alt="Malind Tech Logo"
+                width={96}
+                height={96}
+                className="object-contain drop-shadow-lg"
+              />
+            </div>
+            <div>
+              <h1 className="text-5xl font-bold text-white">Malind Tech</h1>
+              <p className="text-gray-300 text-2xl font-semibold">Inventory Management</p>
+            </div>
+          </div>
+
+          {/* Login Card */}
+          <div className="bg-white/10 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
+              <p className="text-gray-300">Sign in to your account to continue</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert variant="destructive" className="border-red-400/50 bg-red-500/10 backdrop-blur-sm">
+                  <AlertDescription className="text-red-200">{error}</AlertDescription>
                 </Alert>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium text-gray-200">
+                  Email Address
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="admin@inventory.com"
+                  placeholder="Enter your email"
+                  className="h-12 px-4 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all duration-200 backdrop-blur-sm"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="Enter your password"
-                />
+                <Label htmlFor="password" className="text-sm font-medium text-gray-200">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Enter your password"
+                    className="h-12 px-4 pr-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all duration-200 backdrop-blur-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing in...' : 'Sign In'}
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] focus:ring-4 focus:ring-green-400/50 shadow-lg" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Signing in...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <span>Sign In</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Demo Credentials:
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Admin: admin@inventory.com / admin123
-              </p>
-              <p className="text-xs text-gray-500">
-                Staff: staff@inventory.com / staff123
-              </p>
+            {/* Demo Credentials */}
+            <div className="mt-8 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
+              <p className="text-sm font-medium text-gray-200 mb-3">Demo Credentials:</p>
+              <div className="space-y-2 text-xs text-gray-300">
+                <div className="flex justify-between">
+                  <span className="font-medium">Admin:</span>
+                  <span className="text-green-400">admin@gmail.com / 123456789</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Staff:</span>
+                  <span className="text-green-400">staff@inventory.com / staff123</span>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
