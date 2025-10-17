@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
@@ -95,17 +96,27 @@ export function Sidebar() {
         "fixed inset-y-0 z-50 flex flex-col transition-all duration-300 ease-in-out",
         isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0 lg:w-16"
       )}>
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4 shadow-sm">
-          <div className="flex h-16 shrink-0 items-center justify-between">
-            <h1 className={cn(
-              "text-xl font-bold text-gray-900 transition-opacity duration-300",
-              isOpen ? "opacity-100" : "opacity-0 lg:hidden"
-            )}>Inventory System</h1>
+        <div className="flex grow flex-col gap-y-2 overflow-y-auto bg-white px-6 pb-4 shadow-sm">
+          <div className="flex h-20 shrink-0 items-center justify-center px-4">
+            <div className="flex items-center justify-center w-full">
+              {/* Logo - Clickable */}
+              <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="relative h-16 w-40 flex-shrink-0">
+                  <Image
+                    src="/images/logo.png"
+                    alt="Malind Tech Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </Link>
+            </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleSidebar}
-              className="lg:hidden"
+              className="lg:hidden absolute right-2"
             >
               <X className="h-5 w-5" />
             </Button>
