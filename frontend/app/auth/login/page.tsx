@@ -168,9 +168,9 @@ export default function LoginPage() {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-400"></div>
             
             <div className="relative z-10">
-              <div className="text-center mb-8">
-                <h2 className="text-4xl font-bold text-white mb-3">Welcome Back</h2>
-                <p className="text-gray-300 text-lg">Sign in to your account to continue</p>
+              <div className="text-center mb-6">
+                <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
+                <p className="text-gray-300">Sign in to your account to continue</p>
               </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -180,8 +180,8 @@ export default function LoginPage() {
                 </Alert>
               )}
 
-              <div className="space-y-3">
-                <Label htmlFor="email" className="text-base font-semibold text-gray-100">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-100">
                   Email Address
                 </Label>
                 <Input
@@ -191,12 +191,12 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="Enter your email"
-                  className="h-14 px-5 bg-white/15 border-white/30 text-white placeholder-gray-400 rounded-2xl focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-300 backdrop-blur-sm text-lg"
+                  className="h-12 px-4 bg-white/15 border-white/30 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-300 backdrop-blur-sm"
                 />
               </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="password" className="text-base font-semibold text-gray-100">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-100">
                   Password
                 </Label>
                 <div className="relative">
@@ -207,47 +207,47 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="Enter your password"
-                    className="h-14 px-5 pr-14 bg-white/15 border-white/30 text-white placeholder-gray-400 rounded-2xl focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-300 backdrop-blur-sm text-lg"
+                    className="h-12 px-4 pr-12 bg-white/15 border-white/30 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all duration-300 backdrop-blur-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
                   >
-                    {showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full h-16 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-2xl transition-all duration-300 transform hover:scale-[1.02] focus:ring-4 focus:ring-green-400/50 shadow-2xl text-lg" 
+                className="w-full h-12 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] focus:ring-4 focus:ring-green-400/50 shadow-lg" 
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>Signing in...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
                     <span>Sign In</span>
-                    <ArrowRight className="w-5 h-5" />
+                    <ArrowRight className="w-4 h-4" />
                   </div>
                 )}
               </Button>
             </form>
 
             {/* Demo Credentials */}
-            <div className="mt-10 p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
-              <p className="text-base font-semibold text-gray-100 mb-4 text-center">Demo Credentials</p>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                  <span className="font-semibold text-gray-200">Admin:</span>
+            <div className="mt-8 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+              <p className="text-sm font-semibold text-gray-100 mb-3 text-center">Demo Credentials</p>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                  <span className="font-medium text-gray-200">Admin:</span>
                   <span className="text-green-400 font-medium">admin@gmail.com / 123456789</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                  <span className="font-semibold text-gray-200">Staff:</span>
+                <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                  <span className="font-medium text-gray-200">Staff:</span>
                   <span className="text-green-400 font-medium">staff@inventory.com / staff123</span>
                 </div>
               </div>
