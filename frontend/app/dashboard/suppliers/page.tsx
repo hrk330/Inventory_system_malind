@@ -74,9 +74,30 @@ export default function SuppliersPage() {
         const response = await apiClient.post('/suppliers', data)
         console.log('✅ Supplier created successfully:', response.data)
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error creating supplier:', error)
-        throw error
+        
+        // Extract user-friendly error message
+        let errorMessage = 'An unexpected error occurred. Please try again.'
+        
+        if (error.response?.status === 409) {
+          errorMessage = 'A supplier with this name already exists. Please choose a different name.'
+        } else if (error.response?.status === 400) {
+          errorMessage = error.response.data?.message || 'Please check your input and try again.'
+        } else if (error.response?.status === 401) {
+          errorMessage = 'You are not authorized to perform this action. Please log in again.'
+        } else if (error.response?.status === 500) {
+          errorMessage = 'Server error. Please try again later.'
+        } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+          errorMessage = 'Network error. Please check your connection and try again.'
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        }
+        
+        // Create a new error with the user-friendly message
+        const friendlyError = new Error(errorMessage)
+        friendlyError.name = error.name
+        throw friendlyError
       }
     },
     onSuccess: () => {
@@ -95,9 +116,32 @@ export default function SuppliersPage() {
         const response = await apiClient.patch(`/suppliers/${id}`, data)
         console.log('✅ Supplier updated successfully:', response.data)
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error updating supplier:', error)
-        throw error
+        
+        // Extract user-friendly error message
+        let errorMessage = 'An unexpected error occurred. Please try again.'
+        
+        if (error.response?.status === 409) {
+          errorMessage = 'A supplier with this name already exists. Please choose a different name.'
+        } else if (error.response?.status === 400) {
+          errorMessage = error.response.data?.message || 'Please check your input and try again.'
+        } else if (error.response?.status === 401) {
+          errorMessage = 'You are not authorized to perform this action. Please log in again.'
+        } else if (error.response?.status === 404) {
+          errorMessage = 'Supplier not found. It may have been deleted.'
+        } else if (error.response?.status === 500) {
+          errorMessage = 'Server error. Please try again later.'
+        } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+          errorMessage = 'Network error. Please check your connection and try again.'
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        }
+        
+        // Create a new error with the user-friendly message
+        const friendlyError = new Error(errorMessage)
+        friendlyError.name = error.name
+        throw friendlyError
       }
     },
     onSuccess: () => {
@@ -117,9 +161,30 @@ export default function SuppliersPage() {
         const response = await apiClient.delete(`/suppliers/${id}`)
         console.log('✅ Supplier deleted successfully')
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error deleting supplier:', error)
-        throw error
+        
+        // Extract user-friendly error message
+        let errorMessage = 'An unexpected error occurred. Please try again.'
+        
+        if (error.response?.status === 404) {
+          errorMessage = 'Supplier not found. It may have already been deleted.'
+        } else if (error.response?.status === 400) {
+          errorMessage = error.response.data?.message || 'Cannot delete this supplier. It may be in use.'
+        } else if (error.response?.status === 401) {
+          errorMessage = 'You are not authorized to perform this action. Please log in again.'
+        } else if (error.response?.status === 500) {
+          errorMessage = 'Server error. Please try again later.'
+        } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+          errorMessage = 'Network error. Please check your connection and try again.'
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        }
+        
+        // Create a new error with the user-friendly message
+        const friendlyError = new Error(errorMessage)
+        friendlyError.name = error.name
+        throw friendlyError
       }
     },
     onSuccess: () => {
@@ -137,9 +202,30 @@ export default function SuppliersPage() {
         const response = await apiClient.patch(`/suppliers/${id}/toggle-active`)
         console.log('✅ Supplier status toggled successfully:', response.data)
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error toggling supplier status:', error)
-        throw error
+        
+        // Extract user-friendly error message
+        let errorMessage = 'An unexpected error occurred. Please try again.'
+        
+        if (error.response?.status === 404) {
+          errorMessage = 'Supplier not found. It may have been deleted.'
+        } else if (error.response?.status === 400) {
+          errorMessage = error.response.data?.message || 'Cannot update supplier status.'
+        } else if (error.response?.status === 401) {
+          errorMessage = 'You are not authorized to perform this action. Please log in again.'
+        } else if (error.response?.status === 500) {
+          errorMessage = 'Server error. Please try again later.'
+        } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+          errorMessage = 'Network error. Please check your connection and try again.'
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        }
+        
+        // Create a new error with the user-friendly message
+        const friendlyError = new Error(errorMessage)
+        friendlyError.name = error.name
+        throw friendlyError
       }
     },
     onSuccess: () => {
@@ -299,25 +385,33 @@ export default function SuppliersPage() {
 
       {/* Error Messages */}
       {createMutation.error && (
-        <Alert className="mb-4">
+        <Alert variant="destructive" className="mb-4">
           <AlertDescription>
-            Error creating supplier: {createMutation.error.message}
+            {createMutation.error.message}
           </AlertDescription>
         </Alert>
       )}
 
       {updateMutation.error && (
-        <Alert className="mb-4">
+        <Alert variant="destructive" className="mb-4">
           <AlertDescription>
-            Error updating supplier: {updateMutation.error.message}
+            {updateMutation.error.message}
           </AlertDescription>
         </Alert>
       )}
 
       {deleteMutation.error && (
-        <Alert className="mb-4">
+        <Alert variant="destructive" className="mb-4">
           <AlertDescription>
-            Error deleting supplier: {deleteMutation.error.message}
+            {deleteMutation.error.message}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {toggleActiveMutation.error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>
+            {toggleActiveMutation.error.message}
           </AlertDescription>
         </Alert>
       )}

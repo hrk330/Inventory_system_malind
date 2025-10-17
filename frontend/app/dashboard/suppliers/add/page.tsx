@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { CheckCircle } from 'lucide-react'
 import { apiClient } from '@/lib/api-client'
 import { ArrowLeft, Save } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -35,9 +36,30 @@ export default function AddSupplierPage() {
         const response = await apiClient.post('/suppliers', data)
         console.log('✅ Supplier created successfully:', response.data)
         return response.data
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error creating supplier:', error)
-        throw error
+        
+        // Extract user-friendly error message
+        let errorMessage = 'An unexpected error occurred. Please try again.'
+        
+        if (error.response?.status === 409) {
+          errorMessage = 'A supplier with this name already exists. Please choose a different name.'
+        } else if (error.response?.status === 400) {
+          errorMessage = error.response.data?.message || 'Please check your input and try again.'
+        } else if (error.response?.status === 401) {
+          errorMessage = 'You are not authorized to perform this action. Please log in again.'
+        } else if (error.response?.status === 500) {
+          errorMessage = 'Server error. Please try again later.'
+        } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+          errorMessage = 'Network error. Please check your connection and try again.'
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        }
+        
+        // Create a new error with the user-friendly message
+        const friendlyError = new Error(errorMessage)
+        friendlyError.name = error.name
+        throw friendlyError
       }
     },
     onSuccess: () => {
@@ -60,7 +82,16 @@ export default function AddSupplierPage() {
   })
 
   const onSubmit = (data: SupplierFormData) => {
-    createMutation.mutate(data)
+    // Clean up empty optional fields - convert empty strings to undefined
+    const cleanedData = {
+      ...data,
+      contactPerson: data.contactPerson?.trim() || undefined,
+      email: data.email?.trim() || undefined,
+      phone: data.phone?.trim() || undefined,
+      address: data.address?.trim() || undefined,
+    }
+    
+    createMutation.mutate(cleanedData)
   }
 
   // Show loading while checking authentication
@@ -180,11 +211,21 @@ export default function AddSupplierPage() {
                 <Label htmlFor="isActive">Active</Label>
               </div>
 
+              {/* Success Message */}
+              {createMutation.isSuccess && (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    Supplier created successfully! Redirecting...
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Error Messages */}
               {createMutation.error && (
-                <Alert>
+                <Alert variant="destructive">
                   <AlertDescription>
-                    Error creating supplier: {createMutation.error.message}
+                    {createMutation.error.message}
                   </AlertDescription>
                 </Alert>
               )}

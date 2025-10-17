@@ -102,13 +102,14 @@ export function Sidebar() {
               {/* Logo - Clickable */}
               <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
                 <div className="relative h-16 w-40 flex-shrink-0">
-                  <Image
-                    src="/images/logo.png"
-                    alt="Malind Tech Logo"
-                    fill
-                    className="object-contain"
-                    priority
-                  />
+            <Image
+              src="/images/logo.png"
+              alt="Malind Tech Logo"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-contain"
+              priority
+            />
                 </div>
               </Link>
             </div>
