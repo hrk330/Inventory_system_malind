@@ -258,8 +258,8 @@ export default function DeletedProductsPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Deleted Products</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Deleted Products</h1>
+            <p className="mt-1 text-lg text-gray-300">
               Manage deleted products ({deletedProducts?.length || 0} total)
             </p>
           </div>
@@ -363,19 +363,19 @@ export default function DeletedProductsPage() {
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Category:</span>
+                    <span className="text-sm text-gray-300">Category:</span>
                     <span className="text-sm font-medium">{product.category?.name || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Unit:</span>
+                    <span className="text-sm text-gray-300">Unit:</span>
                     <span className="text-sm font-medium">{product.uom.symbol}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Supplier:</span>
+                    <span className="text-sm text-gray-300">Supplier:</span>
                     <span className="text-sm font-medium">{product.supplierName || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Status:</span>
+                    <span className="text-sm text-gray-300">Status:</span>
                     <span className="text-sm font-medium text-red-600">Deleted</span>
                   </div>
                 </div>
@@ -475,7 +475,7 @@ export default function DeletedProductsPage() {
 
       {deletedProducts?.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500">
+          <p className="text-gray-300">
             {search ? 'No deleted products found matching your search' : 'No deleted products found'}
           </p>
         </div>

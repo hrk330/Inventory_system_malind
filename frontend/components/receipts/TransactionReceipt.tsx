@@ -43,30 +43,30 @@ export default function TransactionReceipt({ transaction, onClose }: Transaction
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'RECEIPT':
-        return <ArrowDown className="h-6 w-6 text-green-600" />
+        return <ArrowDown className="h-6 w-6 text-green-400" />
       case 'ISSUE':
-        return <ArrowUp className="h-6 w-6 text-red-600" />
+        return <ArrowUp className="h-6 w-6 text-red-400" />
       case 'TRANSFER':
-        return <ArrowUpDown className="h-6 w-6 text-blue-600" />
+        return <ArrowUpDown className="h-6 w-6 text-blue-400" />
       case 'ADJUSTMENT':
-        return <RotateCcw className="h-6 w-6 text-orange-600" />
+        return <RotateCcw className="h-6 w-6 text-orange-400" />
       default:
-        return <ArrowUpDown className="h-6 w-6 text-gray-600" />
+        return <ArrowUpDown className="h-6 w-6 text-gray-400" />
     }
   }
 
   const getTransactionColor = (type: string) => {
     switch (type) {
       case 'RECEIPT':
-        return 'bg-green-100 text-green-800 border-green-200'
+        return 'bg-green-500/20 text-green-400 border-green-400/30'
       case 'ISSUE':
-        return 'bg-red-100 text-red-800 border-red-200'
+        return 'bg-red-500/20 text-red-400 border-red-400/30'
       case 'TRANSFER':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
+        return 'bg-blue-500/20 text-blue-400 border-blue-400/30'
       case 'ADJUSTMENT':
-        return 'bg-orange-100 text-orange-800 border-orange-200'
+        return 'bg-orange-500/20 text-orange-400 border-orange-400/30'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'bg-gray-500/20 text-gray-400 border-gray-400/30'
     }
   }
 
@@ -350,32 +350,32 @@ export default function TransactionReceipt({ transaction, onClose }: Transaction
 
           {/* Product Information */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3 text-gray-800">Product Information</h3>
-            <div className="bg-gray-50 p-4 rounded-lg receipt-section">
+            <h3 className="text-lg font-semibold mb-3 text-white">Product Information</h3>
+            <div className="bg-gray-800/50 border border-gray-700 p-4 rounded-lg receipt-section">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Product Name</p>
-                  <p className="font-medium">{transaction.product.name}</p>
+                  <p className="text-sm text-gray-300">Product Name</p>
+                  <p className="font-medium text-white">{transaction.product.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">SKU</p>
-                  <p className="font-medium font-mono">{transaction.product.sku}</p>
+                  <p className="text-sm text-gray-300">SKU</p>
+                  <p className="font-medium font-mono text-white">{transaction.product.sku}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Quantity</p>
-                  <p className="font-medium text-lg">{transaction.quantity} {transaction.product.uom.symbol}</p>
+                  <p className="text-sm text-gray-300">Quantity</p>
+                  <p className="font-medium text-lg text-green-400">{transaction.quantity} {transaction.product.uom.symbol}</p>
                 </div>
                 {transaction.referenceNo && (
                   <div>
-                    <p className="text-sm text-gray-600">Reference</p>
-                    <p className="font-medium">{transaction.referenceNo}</p>
+                    <p className="text-sm text-gray-300">Reference</p>
+                    <p className="font-medium text-white">{transaction.referenceNo}</p>
                   </div>
                 )}
               </div>
               {transaction.remarks && (
                 <div className="mt-3">
-                  <p className="text-sm text-gray-600">Remarks</p>
-                  <p className="text-sm">{transaction.remarks}</p>
+                  <p className="text-sm text-gray-300">Remarks</p>
+                  <p className="text-sm text-gray-400">{transaction.remarks}</p>
                 </div>
               )}
             </div>
@@ -383,18 +383,18 @@ export default function TransactionReceipt({ transaction, onClose }: Transaction
 
           {/* Location Information */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3 text-gray-800">Location Information</h3>
-            <div className="bg-gray-50 p-4 rounded-lg receipt-section">
+            <h3 className="text-lg font-semibold mb-3 text-white">Location Information</h3>
+            <div className="bg-gray-800/50 border border-gray-700 p-4 rounded-lg receipt-section">
               {transaction.fromLocation && (
                 <div className="mb-2">
-                  <p className="text-sm text-gray-600">From Location</p>
-                  <p className="font-medium">{transaction.fromLocation.name} ({transaction.fromLocation.type})</p>
+                  <p className="text-sm text-gray-300">From Location</p>
+                  <p className="font-medium text-white">{transaction.fromLocation.name} ({transaction.fromLocation.type})</p>
                 </div>
               )}
               {transaction.toLocation && (
                 <div>
-                  <p className="text-sm text-gray-600">To Location</p>
-                  <p className="font-medium">{transaction.toLocation.name} ({transaction.toLocation.type})</p>
+                  <p className="text-sm text-gray-300">To Location</p>
+                  <p className="font-medium text-white">{transaction.toLocation.name} ({transaction.toLocation.type})</p>
                 </div>
               )}
             </div>
@@ -402,27 +402,27 @@ export default function TransactionReceipt({ transaction, onClose }: Transaction
 
           {/* Transaction Details */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3 text-gray-800">Transaction Details</h3>
-            <div className="bg-gray-50 p-4 rounded-lg receipt-section">
+            <h3 className="text-lg font-semibold mb-3 text-white">Transaction Details</h3>
+            <div className="bg-gray-800/50 border border-gray-700 p-4 rounded-lg receipt-section">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Transaction Type</p>
-                  <p className="font-medium">{getTransactionTitle(transaction.type)}</p>
+                  <p className="text-sm text-gray-300">Transaction Type</p>
+                  <p className="font-medium text-white">{getTransactionTitle(transaction.type)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Performed By</p>
-                  <p className="font-medium">{transaction.creator.name}</p>
+                  <p className="text-sm text-gray-300">Performed By</p>
+                  <p className="font-medium text-white">{transaction.creator.name}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-sm text-gray-600">Timestamp</p>
-                  <p className="font-medium">{new Date(transaction.createdAt).toLocaleString()}</p>
+                  <p className="text-sm text-gray-300">Timestamp</p>
+                  <p className="font-medium text-white">{new Date(transaction.createdAt).toLocaleString()}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t receipt-actions">
+          <div className="flex gap-3 pt-4 border-t border-gray-700 receipt-actions">
             <Button onClick={generatePDF} className="flex-1">
               <Download className="h-4 w-4 mr-2" />
               Download PDF

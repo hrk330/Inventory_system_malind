@@ -22,6 +22,7 @@ import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -43,11 +44,14 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Get all categories' })
   @ApiQuery({ name: 'active', required: false, description: 'Filter by active status' })
   @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
-  findAll(@Query('active') active?: string) {
+  findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query('active') active?: string
+  ) {
     if (active === 'true') {
       return this.categoriesService.findActive();
     }
-    return this.categoriesService.findAll();
+    return this.categoriesService.findAll(paginationDto);
   }
 
   @Get('stats')

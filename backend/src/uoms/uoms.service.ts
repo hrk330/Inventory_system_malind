@@ -2,6 +2,8 @@ import { Injectable, Logger, NotFoundException, ConflictException } from '@nestj
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUOMDto } from './dto/create-uom.dto';
 import { UpdateUOMDto } from './dto/update-uom.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { createPaginatedResponse, getPaginationParams } from '../common/utils/pagination.helper';
 
 @Injectable()
 export class UOMsService {
@@ -29,22 +31,30 @@ export class UOMsService {
     return uom;
   }
 
-  async findAll() {
+  async findAll(paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const { skip, take } = getPaginationParams(page, limit);
+    
     this.logger.log('Fetching all UOMs');
     
-    const uoms = await this.prisma.uOM.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: { 
-            products: {
-              where: { isActive: true }
+    const [uoms, total] = await Promise.all([
+      this.prisma.uOM.findMany({
+        where: { isActive: true },
+        orderBy: { name: 'asc' },
+        include: {
+          _count: {
+            select: { 
+              products: {
+                where: { isActive: true }
+              }
             }
           }
-        }
-      }
-    });
+        },
+        skip,
+        take,
+      }),
+      this.prisma.uOM.count({ where: { isActive: true } }),
+    ]);
 
     // Transform to include product count
     const uomsWithCount = uoms.map(uom => ({
@@ -58,8 +68,8 @@ export class UOMsService {
       productCount: uom._count.products
     }));
 
-    this.logger.log(`Found ${uomsWithCount.length} UOMs`);
-    return uomsWithCount;
+    this.logger.log(`Found ${total} total UOMs, returning ${uomsWithCount.length} for page ${page}`);
+    return createPaginatedResponse(uomsWithCount, total, page, limit);
   }
 
   async findOne(id: string) {

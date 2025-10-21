@@ -4,6 +4,8 @@ import { SuppliersService } from './suppliers.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { SuppliersQueryDto } from './dto/suppliers-query.dto';
 
 @ApiTags('Suppliers')
 @Controller('suppliers')
@@ -24,9 +26,10 @@ export class SuppliersController {
   @Get()
   @ApiOperation({ summary: 'Get all suppliers' })
   @ApiResponse({ status: 200, description: 'Suppliers retrieved successfully' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by name, contact person, or email' })
-  findAll(@Query('search') search?: string) {
-    return this.suppliersService.findAll(search);
+  findAll(@Query() queryDto: SuppliersQueryDto) {
+    const { page, limit, search } = queryDto;
+    const paginationDto = { page, limit };
+    return this.suppliersService.findAll(paginationDto, search);
   }
 
   @Get(':id')

@@ -27,7 +27,8 @@
     "prisma:seed": "ts-node prisma/seed.ts",
     "db:clear": "ts-node scripts/clear-db.ts",
     "db:clear-safe": "ts-node scripts/clear-db-safe.ts",
-    "migrate:enhanced-products": "ts-node scripts/migrate-enhanced-products.ts"
+    "migrate:enhanced-products": "ts-node scripts/migrate-enhanced-products.ts",
+    "setup:logs": "ts-node scripts/setup-logs.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
@@ -37,6 +38,7 @@
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.3.0",
     "@nestjs/swagger": "^7.3.0",
+    "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^5.7.1",
     "bcrypt": "^5.1.1",
     "chart.js": "^4.5.1",
@@ -47,6 +49,7 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",
     "multer": "^1.4.5-lts.1",
+    "nest-winston": "^1.10.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
@@ -54,6 +57,7 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.0",
+    "winston": "^3.18.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

@@ -1,11 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { createPaginatedResponse, getPaginationParams } from '../common/utils/pagination.helper';
 
 @Injectable()
 export class StockBalancesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(productId?: string, locationId?: string) {
+  async findAll(
+    paginationDto: PaginationDto,
+    productId?: string,
+    locationId?: string
+  ) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const { skip, take } = getPaginationParams(page, limit);
+    
     const where: any = {};
     
     if (productId) {
@@ -16,35 +25,42 @@ export class StockBalancesService {
       where.locationId = locationId;
     }
 
-    return this.prisma.stockBalance.findMany({
-      where,
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            sku: true,
-            uom: {
-              select: {
-                symbol: true
-              }
+    const [stockBalances, total] = await Promise.all([
+      this.prisma.stockBalance.findMany({
+        where,
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              uom: {
+                select: {
+                  symbol: true
+                }
+              },
+              reorderLevel: true,
             },
-            reorderLevel: true,
+          },
+          location: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+            },
           },
         },
-        location: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-          },
-        },
-      },
-      orderBy: [
-        { product: { name: 'asc' } },
-        { location: { name: 'asc' } },
-      ],
-    });
+        orderBy: [
+          { product: { name: 'asc' } },
+          { location: { name: 'asc' } },
+        ],
+        skip,
+        take,
+      }),
+      this.prisma.stockBalance.count({ where }),
+    ]);
+
+    return createPaginatedResponse(stockBalances, total, page, limit);
   }
 
   async findOne(productId: string, locationId: string) {

@@ -3,10 +3,12 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { loggerConfig } from './config/logger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+    logger: loggerConfig,
   });
 
   // Set global prefix
@@ -38,8 +40,8 @@ async function bootstrap() {
     }),
   );
 
-  // Global exception filter
-  app.useGlobalFilters(new ValidationExceptionFilter());
+  // Global exception filters
+  app.useGlobalFilters(new AllExceptionsFilter(), new ValidationExceptionFilter());
 
   // Swagger documentation
   const config = new DocumentBuilder()

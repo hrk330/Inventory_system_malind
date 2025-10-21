@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, UseInterceptors, UploadedFile, Res, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import { multerConfig } from '../config/multer.config';
 import { Response } from 'express';
 import { ProductsService } from './products.service';
@@ -10,6 +11,9 @@ import { BulkCreateProductDto } from './dto/bulk-create-product.dto';
 import { BulkUpdateProductDto } from './dto/bulk-update-product.dto';
 import { BulkDeleteProductDto } from './dto/bulk-delete-product.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { ProductsQueryDto } from './dto/products-query.dto';
+import { validateFile, ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../common/utils/file-validation.util';
 
 @ApiTags('Products')
 @Controller('products')
@@ -31,11 +35,10 @@ export class ProductsController {
   @Get()
   @ApiOperation({ summary: 'Get all products' })
   @ApiResponse({ status: 200, description: 'Products retrieved successfully' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by name or SKU' })
-  @ApiQuery({ name: 'category', required: false, description: 'Filter by category' })
-  @ApiQuery({ name: 'status', required: false, description: 'Filter by status (active, inactive, or all)', enum: ['active', 'inactive', 'all'] })
-  findAll(@Query('search') search?: string, @Query('category') category?: string, @Query('status') status?: string) {
-    return this.productsService.findAll(search, category, status);
+  findAll(@Query() queryDto: ProductsQueryDto) {
+    const { page, limit, search, category, status } = queryDto;
+    const paginationDto = { page, limit };
+    return this.productsService.findAll(paginationDto, search, category, status);
   }
 
   @Get('categories')
@@ -108,8 +111,9 @@ export class ProductsController {
   @ApiResponse({ status: 200, description: 'Products deleted successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 409, description: 'Some products cannot be deleted' })
-  bulkDelete(@Body() bulkDeleteDto: BulkDeleteProductDto) {
-    return this.productsService.bulkDelete(bulkDeleteDto.ids);
+  bulkDelete(@Body() bulkDeleteDto: BulkDeleteProductDto, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.productsService.bulkDelete(bulkDeleteDto.ids, userId);
   }
 
   @Delete(':id')
@@ -117,8 +121,9 @@ export class ProductsController {
   @ApiResponse({ status: 200, description: 'Product deleted successfully' })
   @ApiResponse({ status: 404, description: 'Product not found' })
   @ApiResponse({ status: 409, description: 'Cannot delete product with existing stock' })
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(id);
+  remove(@Param('id') id: string, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.productsService.remove(id, userId);
   }
 
   @Patch(':id/restore')
@@ -126,8 +131,9 @@ export class ProductsController {
   @ApiResponse({ status: 200, description: 'Product restored successfully' })
   @ApiResponse({ status: 404, description: 'Product not found' })
   @ApiResponse({ status: 409, description: 'Product is not deleted' })
-  restoreProduct(@Param('id') id: string) {
-    return this.productsService.restoreProduct(id);
+  restoreProduct(@Param('id') id: string, @Req() req: any) {
+    const userId = req.user?.id;
+    return this.productsService.restoreProduct(id, userId);
   }
 
   @Delete('bulk/permanent')
@@ -161,22 +167,36 @@ export class ProductsController {
   }
 
   @Post('bulk-import/preview')
+  @Throttle({ default: { limit: 10, ttl: 3600000 } }) // 10 per hour
   @UseInterceptors(FileInterceptor('file', multerConfig))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Preview bulk import data' })
   @ApiResponse({ status: 200, description: 'Preview data generated' })
   @ApiResponse({ status: 400, description: 'Invalid file format' })
   previewBulkImport(@UploadedFile() file: Express.Multer.File) {
+    // Validate file
+    validateFile(
+      file,
+      [...ALLOWED_MIME_TYPES.csv, ...ALLOWED_MIME_TYPES.excel],
+      MAX_FILE_SIZE.excel,
+    );
     return this.productsService.previewBulkImport(file);
   }
 
   @Post('bulk-import')
+  @Throttle({ default: { limit: 5, ttl: 3600000 } }) // 5 per hour
   @UseInterceptors(FileInterceptor('file', multerConfig))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Bulk import products' })
   @ApiResponse({ status: 200, description: 'Products imported successfully' })
   @ApiResponse({ status: 400, description: 'Invalid file format' })
   bulkImport(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    // Validate file
+    validateFile(
+      file,
+      [...ALLOWED_MIME_TYPES.csv, ...ALLOWED_MIME_TYPES.excel],
+      MAX_FILE_SIZE.excel,
+    );
     const userId = req.user?.id;
     return this.productsService.bulkImport(file, userId);
   }

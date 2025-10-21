@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UOMsService } from './uoms.service';
 import { CreateUOMDto } from './dto/create-uom.dto';
 import { UpdateUOMDto } from './dto/update-uom.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('UOMs')
 @Controller('uoms')
@@ -24,8 +25,8 @@ export class UOMsController {
   @Get()
   @ApiOperation({ summary: 'Get all UOMs' })
   @ApiResponse({ status: 200, description: 'UOMs retrieved successfully' })
-  findAll() {
-    return this.uomsService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.uomsService.findAll(paginationDto);
   }
 
   @Get(':id')

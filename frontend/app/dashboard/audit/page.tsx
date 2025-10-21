@@ -30,17 +30,20 @@ export default function AuditPage() {
   })
 
   // Fetch products and locations for better display
-  const { data: products } = useQuery({
+  const { data: productsResponse } = useQuery({
     queryKey: ['products'],
     queryFn: () => apiClient.get('/products').then(res => res.data),
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   })
 
-  const { data: locations } = useQuery({
+  const { data: locationsResponse } = useQuery({
     queryKey: ['locations'],
     queryFn: () => apiClient.get('/locations').then(res => res.data),
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   })
+
+  const products = productsResponse?.data || productsResponse || []
+  const locations = locationsResponse?.data || locationsResponse || []
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['audit-logs'] })
@@ -57,12 +60,12 @@ export default function AuditPage() {
 
   // Helper functions to get meaningful names
   const getProductName = (productId: string) => {
-    const product = products?.find((p: any) => p.id === productId)
+    const product = (products?.data || products)?.find((p: any) => p.id === productId)
     return product ? `${product.name} (${product.sku})` : `Product ${productId.slice(0, 8)}...`
   }
 
   const getLocationName = (locationId: string) => {
-    const location = locations?.find((l: any) => l.id === locationId)
+    const location = (locations?.data || locations)?.find((l: any) => l.id === locationId)
     return location ? location.name : `Location ${locationId.slice(0, 8)}...`
   }
 
@@ -79,7 +82,7 @@ export default function AuditPage() {
           
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <span className="font-medium">Quantity:</span>
-            <span className="px-2 py-1 bg-gray-100 rounded">{quantity}</span>
+            <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-400/30 rounded">{quantity}</span>
             <span className="font-medium">Type:</span>
             <span className={`px-2 py-1 rounded text-xs ${
               type === 'RECEIPT' ? 'bg-green-100 text-green-800' :
@@ -121,35 +124,114 @@ export default function AuditPage() {
       )
     }
     
-    if (log.entityName === 'Product' && log.newValue) {
-      const { name, sku, costPrice, sellingPrice, reorderLevel } = log.newValue
-      
-      return (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-blue-500" />
-            <span className="font-medium">{name} ({sku})</span>
+    if (log.entityName === 'Product') {
+      const { action, oldValue, newValue } = log
+
+      // Handle CREATE operations
+      if (action === 'CREATE' && newValue) {
+        const { name, sku, costPrice, sellingPrice, reorderLevel } = newValue
+        
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4 text-green-500" />
+              <span className="font-medium text-white">{name}</span>
+            </div>
+            <div className="text-sm text-gray-400 mb-2">
+              <span className="font-medium text-gray-300">SKU:</span> {sku}
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {costPrice && (
+                <div>
+                  <span className="font-medium text-gray-300">Cost Price:</span>
+                  <span className="ml-2 text-green-400">${costPrice}</span>
+                </div>
+              )}
+              {sellingPrice && (
+                <div>
+                  <span className="font-medium text-gray-300">Selling Price:</span>
+                  <span className="ml-2 text-blue-400">${sellingPrice}</span>
+                </div>
+              )}
+              {reorderLevel && (
+                <div>
+                  <span className="font-medium text-gray-300">Reorder Level:</span>
+                  <span className="ml-2 text-orange-400">{reorderLevel}</span>
+                </div>
+              )}
+            </div>
           </div>
-          
-          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-            {costPrice && (
-              <div>
-                <span className="font-medium">Cost Price:</span> ${costPrice}
-              </div>
-            )}
-            {sellingPrice && (
-              <div>
-                <span className="font-medium">Selling Price:</span> ${sellingPrice}
-              </div>
-            )}
-            {reorderLevel && (
-              <div>
-                <span className="font-medium">Reorder Level:</span> {reorderLevel}
+        )
+      }
+
+      // Handle DELETE operations
+      if (action === 'DELETE' && oldValue) {
+        const { name, sku, costPrice, sellingPrice, reorderLevel } = oldValue
+        
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-red-500" />
+              <span className="font-medium text-white">{name}</span>
+            </div>
+            <div className="text-sm text-gray-400 mb-2">
+              <span className="font-medium text-gray-300">SKU:</span> {sku}
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              {costPrice && (
+                <div>
+                  <span className="font-medium text-gray-300">Cost Price:</span>
+                  <span className="ml-2 text-green-400">${costPrice}</span>
+                </div>
+              )}
+              {sellingPrice && (
+                <div>
+                  <span className="font-medium text-gray-300">Selling Price:</span>
+                  <span className="ml-2 text-blue-400">${sellingPrice}</span>
+                </div>
+              )}
+              {reorderLevel && (
+                <div>
+                  <span className="font-medium text-gray-300">Reorder Level:</span>
+                  <span className="ml-2 text-orange-400">{reorderLevel}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      }
+
+      // Handle UPDATE operations
+      if (action === 'UPDATE' && oldValue && newValue) {
+        const { name: oldName, sku, costPrice: oldCost, sellingPrice: oldSelling, reorderLevel: oldReorder } = oldValue
+        const { name: newName, costPrice: newCost, sellingPrice: newSelling, reorderLevel: newReorder } = newValue
+        
+        const changes = []
+        if (oldCost !== newCost) changes.push({ field: 'Cost Price', old: `$${oldCost}`, new: `$${newCost}`, color: 'text-green-400' })
+        if (oldSelling !== newSelling) changes.push({ field: 'Selling Price', old: `$${oldSelling}`, new: `$${newSelling}`, color: 'text-blue-400' })
+        if (oldReorder !== newReorder) changes.push({ field: 'Reorder Level', old: oldReorder, new: newReorder, color: 'text-orange-400' })
+
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Edit className="h-4 w-4 text-blue-500" />
+              <span className="font-medium text-white">{newName || oldName}</span>
+            </div>
+            {changes.length > 0 && (
+              <div className="space-y-1">
+                {changes.map((change, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm">
+                    <span className="font-medium text-gray-300">{change.field}:</span>
+                    <span className="text-gray-400">{change.old}</span>
+                    <ArrowRight className="h-3 w-3 text-gray-500" />
+                    <span className={change.color}>{change.new}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </div>
-      )
+        )
+      }
     }
     
     return null
@@ -177,7 +259,7 @@ export default function AuditPage() {
       case 'DELETE':
         return 'text-red-600 bg-red-100'
       default:
-        return 'text-gray-600 bg-gray-100'
+        return 'text-green-400 bg-green-500/20 border border-green-400/30'
     }
   }
 
@@ -194,8 +276,8 @@ export default function AuditPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <FileText className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Audit Logs</h3>
-          <p className="text-gray-500 mb-4">
+          <h3 className="text-lg font-medium text-white mb-2">Error Loading Audit Logs</h3>
+          <p className="text-gray-300 mb-4">
             {auditError?.message || summaryError?.message || 'Unable to load audit data'}
           </p>
           <button 
@@ -214,8 +296,8 @@ export default function AuditPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Audit Logs</h1>
+            <p className="mt-1 text-lg text-gray-300">
               Complete audit trail of all system activities
               {isFetching && <span className="ml-2 text-blue-500">• Auto-refreshing...</span>}
               {lastUpdated && !isFetching && (
@@ -246,8 +328,8 @@ export default function AuditPage() {
             <div className="flex items-center">
               <FileText className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Logs</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-300">Total Logs</p>
+                <p className="text-2xl font-semibold text-white">
                   {summary?.totalLogs || 0}
                 </p>
               </div>
@@ -260,7 +342,7 @@ export default function AuditPage() {
             <div className="flex items-center">
               <Plus className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Creates</p>
+                <p className="text-sm font-medium text-gray-300">Creates</p>
                 <p className="text-2xl font-semibold text-green-600">
                   {summary?.actionCounts?.CREATE || 0}
                 </p>
@@ -274,7 +356,7 @@ export default function AuditPage() {
             <div className="flex items-center">
               <Edit className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Updates</p>
+                <p className="text-sm font-medium text-gray-300">Updates</p>
                 <p className="text-2xl font-semibold text-blue-600">
                   {summary?.actionCounts?.UPDATE || 0}
                 </p>
@@ -288,7 +370,7 @@ export default function AuditPage() {
             <div className="flex items-center">
               <Trash2 className="h-8 w-8 text-red-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Deletes</p>
+                <p className="text-sm font-medium text-gray-300">Deletes</p>
                 <p className="text-2xl font-semibold text-red-600">
                   {summary?.actionCounts?.DELETE || 0}
                 </p>
@@ -335,17 +417,17 @@ export default function AuditPage() {
                         <span className={`px-2 py-1 text-xs rounded-full ${getActionColor(log.action)}`}>
                           {log.action}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-300">
                           {log.entityName}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-300">
                         Entity ID: {log.entityId}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-300">
                       {new Date(log.timestamp).toLocaleString()}
                     </div>
                   </div>
@@ -358,7 +440,7 @@ export default function AuditPage() {
                         {log.oldValue && (
                           <div>
                             <div className="text-sm font-medium text-gray-700 mb-1">Before:</div>
-                            <div className="text-xs bg-gray-100 p-2 rounded font-mono">
+                            <div className="text-xs bg-green-500/20 text-green-400 border border-green-400/30 p-2 rounded font-mono">
                               {JSON.stringify(log.oldValue, null, 2)}
                             </div>
                           </div>
@@ -366,7 +448,7 @@ export default function AuditPage() {
                         {log.newValue && (
                           <div>
                             <div className="text-sm font-medium text-gray-700 mb-1">After:</div>
-                            <div className="text-xs bg-gray-100 p-2 rounded font-mono">
+                            <div className="text-xs bg-green-500/20 text-green-400 border border-green-400/30 p-2 rounded font-mono">
                               {JSON.stringify(log.newValue, null, 2)}
                             </div>
                           </div>
@@ -382,7 +464,7 @@ export default function AuditPage() {
           {auditLogs?.logs?.length === 0 && (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No audit logs found</p>
+              <p className="text-gray-300">No audit logs found</p>
               <p className="text-sm text-gray-400 mt-1">System activities will appear here</p>
             </div>
           )}

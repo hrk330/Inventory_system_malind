@@ -2,6 +2,8 @@ import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { StockBalancesService } from './stock-balances.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { StockBalancesQueryDto } from './dto/stock-balances-query.dto';
 
 @ApiTags('Stock Balances')
 @Controller('stock/balances')
@@ -13,10 +15,10 @@ export class StockBalancesController {
   @Get()
   @ApiOperation({ summary: 'Get all stock balances' })
   @ApiResponse({ status: 200, description: 'Stock balances retrieved successfully' })
-  @ApiQuery({ name: 'productId', required: false, description: 'Filter by product ID' })
-  @ApiQuery({ name: 'locationId', required: false, description: 'Filter by location ID' })
-  findAll(@Query('productId') productId?: string, @Query('locationId') locationId?: string) {
-    return this.stockBalancesService.findAll(productId, locationId);
+  findAll(@Query() queryDto: StockBalancesQueryDto) {
+    const { page, limit, productId, locationId } = queryDto;
+    const paginationDto = { page, limit };
+    return this.stockBalancesService.findAll(paginationDto, productId, locationId);
   }
 
   @Get('reorder-alerts')

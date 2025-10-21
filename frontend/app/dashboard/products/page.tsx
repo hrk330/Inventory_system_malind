@@ -226,13 +226,16 @@ export default function ProductsPage() {
   }, [searchParams])
 
   // Fetch UOMs for the form
-  const { data: uoms } = useQuery<UOM[]>({
+  const { data: uomsResponse } = useQuery<UOM[] | {data: UOM[], meta: any}>({
     queryKey: ['uoms'],
     queryFn: async () => {
       const response = await apiClient.get('/uoms')
       return response.data
     },
   })
+  const uoms: UOM[] = Array.isArray(uomsResponse) 
+    ? uomsResponse 
+    : uomsResponse?.data || []
   
   // Handle search change from SearchInput component
   const handleSearchChange = useCallback((value: string) => {
@@ -269,7 +272,7 @@ export default function ProductsPage() {
   }
 
   // Fetch products
-  const { data: products, isLoading, error } = useQuery<Product[]>({
+  const { data: productsResponse, isLoading, error } = useQuery<Product[] | {data: Product[], meta: any}>({
     queryKey: ['products', search, categoryFilter, statusFilter],
     queryFn: async () => {
       console.log('🔍 Fetching products with search:', search, 'category:', categoryFilter, 'status:', statusFilter)
@@ -297,8 +300,13 @@ export default function ProductsPage() {
     },
   })
 
+  // Extract products array from paginated response
+  const products: Product[] = Array.isArray(productsResponse) 
+    ? productsResponse 
+    : productsResponse?.data || []
+
   // Fetch categories
-  const { data: categories } = useQuery<Category[]>({
+  const { data: categoriesResponse } = useQuery<Category[] | {data: Category[], meta: any}>({
     queryKey: ['categories'],
     queryFn: async () => {
       console.log('🏷️ Fetching categories...')
@@ -312,9 +320,12 @@ export default function ProductsPage() {
       }
     },
   })
+  const categories: Category[] = Array.isArray(categoriesResponse) 
+    ? categoriesResponse 
+    : categoriesResponse?.data || []
 
   // Fetch suppliers
-  const { data: suppliers } = useQuery<Supplier[]>({
+  const { data: suppliersResponse } = useQuery<Supplier[] | {data: Supplier[], meta: any}>({
     queryKey: ['suppliers'],
     queryFn: async () => {
       console.log('🏢 Fetching suppliers...')
@@ -328,6 +339,9 @@ export default function ProductsPage() {
       }
     },
   })
+  const suppliers: Supplier[] = Array.isArray(suppliersResponse) 
+    ? suppliersResponse 
+    : suppliersResponse?.data || []
 
   // Create product mutation
   const createMutation = useMutation({
@@ -692,8 +706,8 @@ export default function ProductsPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Products</h1>
+            <p className="mt-1 text-lg text-gray-300">
               Manage your inventory products ({products?.length || 0} total)
             </p>
           </div>

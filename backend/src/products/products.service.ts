@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { AuditService } from '../audit/audit.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { createPaginatedResponse, getPaginationParams } from '../common/utils/pagination.helper';
 
 @Injectable()
 export class ProductsService {
@@ -143,7 +145,15 @@ export class ProductsService {
     return product;
   }
 
-  async findAll(search?: string, category?: string, status?: string) {
+  async findAll(
+    paginationDto: PaginationDto,
+    search?: string,
+    category?: string,
+    status?: string
+  ) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const { skip, take } = getPaginationParams(page, limit);
+    
     this.logger.log(`Fetching products - search: ${search || 'none'}, category: ${category || 'all'}, status: ${status || 'all'}`);
     
     const where: any = {
@@ -189,8 +199,9 @@ export class ProductsService {
     }
     // If status is 'all' or not specified, show all non-deleted products
 
-    const products = await this.prisma.product.findMany({
-      where,
+    const [products, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
         include: {
           uom: {
             select: {
@@ -216,11 +227,15 @@ export class ProductsService {
             }
           }
         },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
 
-    this.logger.log(`Found ${products.length} products`);
-    return products;
+    this.logger.log(`Found ${total} total products, returning ${products.length} for page ${page}`);
+    return createPaginatedResponse(products, total, page, limit);
   }
 
   async findOne(id: string) {
@@ -462,7 +477,7 @@ export class ProductsService {
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string, userId?: string) {
     this.logger.log(`Soft deleting product: ${id}`);
     
     // Check if product exists and is not already deleted
@@ -497,6 +512,33 @@ export class ProductsService {
       },
     });
 
+    // Log audit trail
+    if (userId) {
+      try {
+        await this.auditService.log(
+          userId,
+          'Product',
+          id,
+          'DELETE',
+          {
+            name: product.name,
+            sku: product.sku,
+            categoryId: product.categoryId,
+            uomId: product.uomId,
+            supplierId: product.supplierId,
+            costPrice: product.costPrice,
+            sellingPrice: product.sellingPrice,
+            reorderLevel: product.reorderLevel,
+            minStock: product.minStock,
+            maxStock: product.maxStock,
+          },
+          null
+        );
+      } catch (auditError) {
+        this.logger.warn(`Failed to log audit trail for product deletion: ${auditError.message}`);
+      }
+    }
+
     this.logger.log(`Product soft deleted successfully: ${id}`);
     return { message: 'Product deleted successfully' };
   }
@@ -530,7 +572,7 @@ export class ProductsService {
     return deletedProducts;
   }
 
-  async restoreProduct(id: string) {
+  async restoreProduct(id: string, userId?: string) {
     this.logger.log(`Restoring product: ${id}`);
     
     const product = await this.prisma.product.findUnique({
@@ -552,6 +594,48 @@ export class ProductsService {
         isActive: true // Restore as active
       },
     });
+
+    // Log audit trail
+    if (userId) {
+      try {
+        await this.auditService.log(
+          userId,
+          'Product',
+          id,
+          'UPDATE',
+          {
+            name: product.name,
+            sku: product.sku,
+            categoryId: product.categoryId,
+            uomId: product.uomId,
+            supplierId: product.supplierId,
+            costPrice: product.costPrice,
+            sellingPrice: product.sellingPrice,
+            reorderLevel: product.reorderLevel,
+            minStock: product.minStock,
+            maxStock: product.maxStock,
+            deletedAt: product.deletedAt,
+            isActive: false,
+          },
+          {
+            name: product.name,
+            sku: product.sku,
+            categoryId: product.categoryId,
+            uomId: product.uomId,
+            supplierId: product.supplierId,
+            costPrice: product.costPrice,
+            sellingPrice: product.sellingPrice,
+            reorderLevel: product.reorderLevel,
+            minStock: product.minStock,
+            maxStock: product.maxStock,
+            deletedAt: null,
+            isActive: true,
+          }
+        );
+      } catch (auditError) {
+        this.logger.warn(`Failed to log audit trail for product restore: ${auditError.message}`);
+      }
+    }
 
     this.logger.log(`Product restored successfully: ${id}`);
     return { message: 'Product restored successfully' };
@@ -1234,7 +1318,7 @@ export class ProductsService {
     return { results, successCount, totalCount: updates.length };
   }
 
-  async bulkDelete(ids: string[]) {
+  async bulkDelete(ids: string[], userId?: string) {
     this.logger.log(`Bulk soft deleting ${ids.length} products`);
     
     // Check if products exist and are not already deleted
@@ -1243,7 +1327,19 @@ export class ProductsService {
         id: { in: ids },
         deletedAt: null // Only get non-deleted products
       },
-      select: { id: true, name: true }
+      select: { 
+        id: true, 
+        name: true, 
+        sku: true,
+        categoryId: true,
+        uomId: true,
+        supplierId: true,
+        costPrice: true,
+        sellingPrice: true,
+        reorderLevel: true,
+        minStock: true,
+        maxStock: true
+      }
     });
 
     if (products.length === 0) {
@@ -1272,6 +1368,35 @@ export class ProductsService {
         isActive: false
       },
     });
+
+    // Log audit trail for each deleted product
+    if (userId) {
+      for (const product of products) {
+        try {
+          await this.auditService.log(
+            userId,
+            'Product',
+            product.id,
+            'DELETE',
+            {
+              name: product.name,
+              sku: product.sku,
+              categoryId: product.categoryId,
+              uomId: product.uomId,
+              supplierId: product.supplierId,
+              costPrice: product.costPrice,
+              sellingPrice: product.sellingPrice,
+              reorderLevel: product.reorderLevel,
+              minStock: product.minStock,
+              maxStock: product.maxStock,
+            },
+            null
+          );
+        } catch (auditError) {
+          this.logger.warn(`Failed to log audit trail for bulk product deletion ${product.id}: ${auditError.message}`);
+        }
+      }
+    }
 
     this.logger.log(`Bulk soft deleted ${deletedProducts.count} products`);
     return { count: deletedProducts.count, message: 'Products deleted successfully' };

@@ -55,8 +55,8 @@ export default function ReorderPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Reorder Alerts</h3>
-          <p className="text-gray-500 mb-4">
+          <h3 className="text-lg font-medium text-white mb-2">Error Loading Reorder Alerts</h3>
+          <p className="text-gray-300 mb-4">
             {alertsError?.message || summaryError?.message || 'Unable to load reorder data'}
           </p>
           <button 
@@ -75,8 +75,8 @@ export default function ReorderPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reorder Alerts</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Reorder Alerts</h1>
+            <p className="mt-1 text-lg text-gray-300">
               Products that need restocking
               {isFetching && <span className="ml-2 text-blue-500">• Auto-refreshing...</span>}
               {lastUpdated && !isFetching && (
@@ -107,8 +107,8 @@ export default function ReorderPage() {
             <div className="flex items-center">
               <AlertTriangle className="h-8 w-8 text-red-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Alerts</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-300">Total Alerts</p>
+                <p className="text-2xl font-semibold text-white">
                   {summary?.totalAlerts || 0}
                 </p>
               </div>
@@ -121,7 +121,7 @@ export default function ReorderPage() {
             <div className="flex items-center">
               <AlertTriangle className="h-8 w-8 text-red-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Critical Alerts</p>
+                <p className="text-sm font-medium text-gray-300">Critical Alerts</p>
                 <p className="text-2xl font-semibold text-red-600">
                   {summary?.criticalAlerts || 0}
                 </p>
@@ -135,7 +135,7 @@ export default function ReorderPage() {
             <div className="flex items-center">
               <AlertTriangle className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Low Stock</p>
+                <p className="text-sm font-medium text-gray-300">Low Stock</p>
                 <p className="text-2xl font-semibold text-orange-600">
                   {summary?.lowStockAlerts || 0}
                 </p>
@@ -149,8 +149,8 @@ export default function ReorderPage() {
             <div className="flex items-center">
               <Package className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Affected Products</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-300">Affected Products</p>
+                <p className="text-2xl font-semibold text-white">
                   {summary?.alertsByProduct?.length || 0}
                 </p>
               </div>
@@ -197,7 +197,7 @@ export default function ReorderPage() {
                           {alert.quantity <= 0 ? 'OUT OF STOCK' : 'LOW STOCK'}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-300">
                         SKU: {alert.product.sku} • {alert.location.name}
                       </div>
                     </div>
@@ -206,7 +206,7 @@ export default function ReorderPage() {
                     <div className="text-lg font-semibold text-red-600">
                       {alert.quantity} / {alert.product.reorderLevel}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-300">
                       Reorder Level: {alert.product.reorderLevel}
                     </div>
                   </div>
@@ -233,7 +233,7 @@ export default function ReorderPage() {
           {alerts?.length === 0 && (
             <div className="text-center py-12">
               <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No reorder alerts at this time</p>
+              <p className="text-gray-300">No reorder alerts at this time</p>
               <p className="text-sm text-gray-400 mt-1">All products are well stocked</p>
             </div>
           )}

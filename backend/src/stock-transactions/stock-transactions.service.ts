@@ -2,6 +2,8 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStockTransactionDto } from './dto/create-stock-transaction.dto';
 import { AuditService } from '../audit/audit.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { createPaginatedResponse, getPaginationParams } from '../common/utils/pagination.helper';
 
 @Injectable()
 export class StockTransactionsService {
@@ -109,7 +111,15 @@ export class StockTransactionsService {
     });
   }
 
-  async findAll(productId?: string, locationId?: string, type?: string) {
+  async findAll(
+    paginationDto: PaginationDto,
+    productId?: string,
+    locationId?: string,
+    type?: string
+  ) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const { skip, take } = getPaginationParams(page, limit);
+    
     const where: any = {};
     
     if (productId) {
@@ -127,45 +137,52 @@ export class StockTransactionsService {
       where.type = type;
     }
 
-    return this.prisma.stockTransaction.findMany({
-      where,
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            sku: true,
-            uom: {
-              select: {
-                symbol: true
-              }
+    const [transactions, total] = await Promise.all([
+      this.prisma.stockTransaction.findMany({
+        where,
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              uom: {
+                select: {
+                  symbol: true
+                }
+              },
+            },
+          },
+          fromLocation: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+            },
+          },
+          toLocation: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+            },
+          },
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
             },
           },
         },
-        fromLocation: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-          },
-        },
-        toLocation: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-          },
-        },
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.stockTransaction.count({ where }),
+    ]);
+
+    return createPaginatedResponse(transactions, total, page, limit);
   }
 
   async findOne(id: string) {

@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { StockTransactionsService } from '../stock-transactions/stock-transactions.service';
 import { CreateStocktakeDto } from './dto/create-stocktake.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { createPaginatedResponse, getPaginationParams } from '../common/utils/pagination.helper';
 
 @Injectable()
 export class StocktakeService {
@@ -88,7 +90,14 @@ export class StocktakeService {
     });
   }
 
-  async findAll(productId?: string, locationId?: string) {
+  async findAll(
+    paginationDto: PaginationDto,
+    productId?: string,
+    locationId?: string
+  ) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const { skip, take } = getPaginationParams(page, limit);
+    
     const where: any = {};
     
     if (productId) {
@@ -99,38 +108,45 @@ export class StocktakeService {
       where.locationId = locationId;
     }
 
-    return this.prisma.stocktake.findMany({
-      where,
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            sku: true,
-            uom: {
-              select: {
-                symbol: true
-              }
+    const [stocktakes, total] = await Promise.all([
+      this.prisma.stocktake.findMany({
+        where,
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              uom: {
+                select: {
+                  symbol: true
+                }
+              },
+            },
+          },
+          location: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+            },
+          },
+          performer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
             },
           },
         },
-        location: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-          },
-        },
-        performer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.stocktake.count({ where }),
+    ]);
+
+    return createPaginatedResponse(stocktakes, total, page, limit);
   }
 
   async findOne(id: string) {

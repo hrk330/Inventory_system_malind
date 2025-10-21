@@ -4,6 +4,8 @@ import { LocationsService } from './locations.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { LocationsQueryDto } from './dto/locations-query.dto';
 
 @ApiTags('Locations')
 @Controller('locations')
@@ -24,10 +26,10 @@ export class LocationsController {
   @Get()
   @ApiOperation({ summary: 'Get all locations' })
   @ApiResponse({ status: 200, description: 'Locations retrieved successfully' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by name or address' })
-  @ApiQuery({ name: 'type', required: false, description: 'Filter by type' })
-  findAll(@Query('search') search?: string, @Query('type') type?: string) {
-    return this.locationsService.findAll(search, type);
+  findAll(@Query() queryDto: LocationsQueryDto) {
+    const { page, limit, search, type } = queryDto;
+    const paginationDto = { page, limit };
+    return this.locationsService.findAll(paginationDto, search, type);
   }
 
   @Get('types')

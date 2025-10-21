@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException, 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { createPaginatedResponse, getPaginationParams } from '../common/utils/pagination.helper';
 
 @Injectable()
 export class CategoriesService {
@@ -35,15 +37,23 @@ export class CategoriesService {
     return category;
   }
 
-  async findAll() {
+  async findAll(paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const { skip, take } = getPaginationParams(page, limit);
+    
     this.logger.log('Fetching all categories');
     
-    const categories = await this.prisma.category.findMany({
-      orderBy: { name: 'asc' },
-    });
+    const [categories, total] = await Promise.all([
+      this.prisma.category.findMany({
+        orderBy: { name: 'asc' },
+        skip,
+        take,
+      }),
+      this.prisma.category.count(),
+    ]);
 
-    this.logger.log(`Found ${categories.length} categories`);
-    return categories;
+    this.logger.log(`Found ${total} total categories, returning ${categories.length} for page ${page}`);
+    return createPaginatedResponse(categories, total, page, limit);
   }
 
   async findActive() {

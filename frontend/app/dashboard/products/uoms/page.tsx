@@ -46,13 +46,13 @@ export default function UOMsPage() {
   const { data: session, status } = useSession()
 
   // Fetch UOMs with product counts
-  const { data: uoms, isLoading, error } = useQuery<UOM[]>({
+  const { data: uomsResponse, isLoading, error } = useQuery<UOM[]>({
     queryKey: ['uoms', search],
     queryFn: async () => {
       console.log('📏 Fetching UOMs with search:', search)
       try {
         const response = await apiClient.get('/uoms')
-        let uomsData = response.data
+        let uomsData = response.data?.data || response.data || []
         
         // Filter based on search
         if (search) {
@@ -70,6 +70,9 @@ export default function UOMsPage() {
       }
     },
   })
+
+  // Extract uoms array from paginated response
+  const uoms = uomsResponse || []
 
   // Create UOM mutation
   const createMutation = useMutation({
@@ -251,8 +254,8 @@ export default function UOMsPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Units of Measure (UOMs)</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Units of Measure (UOMs)</h1>
+            <p className="mt-1 text-lg text-gray-300">
               Manage units of measure for products ({uoms?.length || 0} total)
             </p>
           </div>
@@ -360,7 +363,7 @@ export default function UOMsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600 mb-4">{uom.description}</p>
+                <p className="text-sm text-gray-300 mb-4">{uom.description}</p>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -407,11 +410,11 @@ export default function UOMsPage() {
                     {uom.name}
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                    <span className="font-mono text-sm bg-green-500/20 text-green-400 border border-green-400/30 px-2 py-1 rounded">
                       {uom.symbol}
                     </span>
                   </TableCell>
-                  <TableCell className="text-sm text-gray-600">
+                  <TableCell className="text-sm text-gray-300">
                     {uom.description || 'No description'}
                   </TableCell>
                   <TableCell>
@@ -453,7 +456,7 @@ export default function UOMsPage() {
 
       {uoms?.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500">
+          <p className="text-gray-300">
             {search ? 'No UOMs found matching your search' : 'No UOMs found'}
           </p>
         </div>

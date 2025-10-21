@@ -48,7 +48,7 @@ export default function SuppliersPage() {
   const { data: session, status } = useSession()
 
   // Fetch suppliers
-  const { data: suppliers, isLoading, error } = useQuery({
+  const { data: suppliersResponse, isLoading, error } = useQuery<{data: Supplier[], meta: any}>({
     queryKey: ['suppliers', search],
     queryFn: async () => {
       console.log('🏢 Fetching suppliers with search:', search)
@@ -65,6 +65,11 @@ export default function SuppliersPage() {
       }
     },
   })
+
+  // Extract suppliers array from paginated response
+  const suppliers: Supplier[] = Array.isArray(suppliersResponse) 
+    ? suppliersResponse 
+    : suppliersResponse?.data || []
 
   // Create supplier mutation
   const createMutation = useMutation({
@@ -348,8 +353,8 @@ export default function SuppliersPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Suppliers</h1>
+            <p className="mt-1 text-lg text-gray-300">
               Manage your suppliers ({suppliers?.length || 0} total)
             </p>
           </div>
@@ -476,7 +481,7 @@ export default function SuppliersPage() {
 
       {suppliers?.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500">No suppliers found</p>
+          <p className="text-gray-300">No suppliers found</p>
         </div>
       )}
 

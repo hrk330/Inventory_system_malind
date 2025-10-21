@@ -236,8 +236,8 @@ export default function LocationsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Locations</h1>
-          <p className="text-gray-600">Manage your warehouse and store locations</p>
+          <h1 className="text-3xl font-bold text-white">Locations</h1>
+          <p className="text-lg text-gray-300">Manage your warehouse and store locations</p>
         </div>
         <Button onClick={() => setIsCreateOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -302,7 +302,7 @@ export default function LocationsPage() {
       {/* Locations Display */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 pr-4 mr-2">
-          {locations?.map((location: Location) => (
+          {(locations?.data || locations || [])?.map((location: Location) => (
             <Card key={location.id}>
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -320,14 +320,14 @@ export default function LocationsPage() {
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Type:</span>
+                    <span className="text-sm text-gray-300">Type:</span>
                     <span className="text-sm font-medium capitalize">
                       {location.type.toLowerCase()}
                     </span>
                   </div>
                   {location.address && (
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Address:</span>
+                      <span className="text-sm text-gray-300">Address:</span>
                       <span className="text-sm font-medium">{location.address}</span>
                     </div>
                   )}
@@ -378,7 +378,7 @@ export default function LocationsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {locations?.map((location: Location) => (
+              {(locations?.data || locations || [])?.map((location: Location) => (
                 <TableRow key={location.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
@@ -435,10 +435,10 @@ export default function LocationsPage() {
         </Card>
       )}
 
-      {locations?.length === 0 && (
+      {(locations?.data || locations || [])?.length === 0 && (
         <div className="text-center py-12">
           <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No locations found</p>
+          <p className="text-gray-300">No locations found</p>
           <p className="text-sm text-gray-400 mt-2">
             {search || typeFilter !== 'all' 
               ? 'Try adjusting your search or filters' 
@@ -681,7 +681,7 @@ export default function LocationsPage() {
           ) : (
             <div className="text-center py-12">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No stock found at this location</p>
+              <p className="text-gray-300">No stock found at this location</p>
               <p className="text-sm text-gray-400 mt-2">
                 Products will appear here once they are added to this location
               </p>

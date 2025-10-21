@@ -55,15 +55,18 @@ export default function StocktakePage() {
   })
 
   // Fetch products and locations for dropdowns
-  const { data: products } = useQuery({
+  const { data: productsResponse } = useQuery({
     queryKey: ['products'],
     queryFn: () => apiClient.get('/products').then(res => res.data),
   })
 
-  const { data: locations } = useQuery({
+  const { data: locationsResponse } = useQuery({
     queryKey: ['locations'],
     queryFn: () => apiClient.get('/locations').then(res => res.data),
   })
+
+  const products = productsResponse?.data || productsResponse || []
+  const locations = locationsResponse?.data || locationsResponse || []
 
   // Stocktake mutation
   const stocktakeMutation = useMutation({
@@ -119,8 +122,8 @@ export default function StocktakePage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Stocktake</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Stocktake</h1>
+            <p className="mt-1 text-lg text-gray-300">
               Manual stock counting and adjustments
             </p>
           </div>
@@ -147,7 +150,7 @@ export default function StocktakePage() {
                       <SelectValue placeholder="Select product" />
                     </SelectTrigger>
                     <SelectContent>
-                      {products?.map((product: any) => (
+                      {(products?.data || products)?.map((product: any) => (
                         <SelectItem key={product.id} value={product.id}>
                           {product.name} ({product.sku})
                         </SelectItem>
@@ -170,7 +173,7 @@ export default function StocktakePage() {
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
-                      {locations?.map((location: any) => (
+                      {(locations?.data || locations)?.map((location: any) => (
                         <SelectItem key={location.id} value={location.id}>
                           {location.name} ({location.type})
                         </SelectItem>
@@ -259,7 +262,7 @@ export default function StocktakePage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Locations</SelectItem>
-              {locations?.map((location: any) => (
+              {(locations?.data || locations)?.map((location: any) => (
                 <SelectItem key={location.id} value={location.id}>
                   {location.name}
                 </SelectItem>
@@ -276,8 +279,8 @@ export default function StocktakePage() {
             <div className="flex items-center">
               <ClipboardList className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Counts</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-300">Total Counts</p>
+                <p className="text-2xl font-semibold text-white">
                   {summary?.totalCount || 0}
                 </p>
               </div>
@@ -290,8 +293,8 @@ export default function StocktakePage() {
             <div className="flex items-center">
               <TrendingUp className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Adjustments</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-300">Adjustments</p>
+                <p className="text-2xl font-semibold text-white">
                   {summary?.adjustments || 0}
                 </p>
               </div>
@@ -304,8 +307,8 @@ export default function StocktakePage() {
             <div className="flex items-center">
               <TrendingDown className="h-8 w-8 text-red-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Adjustment</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-300">Total Adjustment</p>
+                <p className="text-2xl font-semibold text-white">
                   {summary?.totalAdjustment || 0}
                 </p>
               </div>
@@ -318,8 +321,8 @@ export default function StocktakePage() {
             <div className="flex items-center">
               <ClipboardList className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Recent Counts</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-gray-300">Recent Counts</p>
+                <p className="text-2xl font-semibold text-white">
                   {summary?.recentStocktakes?.length || 0}
                 </p>
               </div>
@@ -338,7 +341,7 @@ export default function StocktakePage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {stocktakes?.slice(0, 10).map((stocktake: any) => (
+            {(stocktakes?.data || stocktakes || [])?.slice(0, 10).map((stocktake: any) => (
               <div key={stocktake.id} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -347,7 +350,7 @@ export default function StocktakePage() {
                     </div>
                     <div>
                       <div className="font-medium">{stocktake.product.name}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-300">
                         {stocktake.location.name} • {stocktake.performer.name}
                       </div>
                     </div>
@@ -356,7 +359,7 @@ export default function StocktakePage() {
                     <div className="text-lg font-semibold">
                       {stocktake.countedQuantity} {stocktake.product.unit}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-300">
                       System: {stocktake.systemQuantity}
                     </div>
                   </div>
@@ -378,17 +381,17 @@ export default function StocktakePage() {
                   </div>
                 )}
                 
-                <div className="mt-2 text-xs text-gray-500">
+                <div className="mt-2 text-xs text-gray-300">
                   {new Date(stocktake.createdAt).toLocaleString()}
                 </div>
               </div>
             ))}
           </div>
 
-          {stocktakes?.length === 0 && (
+          {(stocktakes?.data || stocktakes || [])?.length === 0 && (
             <div className="text-center py-12">
               <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No stocktakes found</p>
+              <p className="text-gray-300">No stocktakes found</p>
               <p className="text-sm text-gray-400 mt-1">Start by performing a manual count</p>
             </div>
           )}

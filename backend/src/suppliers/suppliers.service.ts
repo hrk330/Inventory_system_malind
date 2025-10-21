@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, ConflictException, Logger } from '@nestj
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { createPaginatedResponse, getPaginationParams } from '../common/utils/pagination.helper';
 
 @Injectable()
 export class SuppliersService {
@@ -30,7 +32,13 @@ export class SuppliersService {
     return supplier;
   }
 
-  async findAll(search?: string) {
+  async findAll(
+    paginationDto: PaginationDto,
+    search?: string
+  ) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const { skip, take } = getPaginationParams(page, limit);
+    
     this.logger.log(`Fetching suppliers - search: ${search || 'none'}`);
     
     const where: any = {};
@@ -43,13 +51,18 @@ export class SuppliersService {
       ];
     }
 
-    const suppliers = await this.prisma.supplier.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    const [suppliers, total] = await Promise.all([
+      this.prisma.supplier.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.supplier.count({ where }),
+    ]);
 
-    this.logger.log(`Found ${suppliers.length} suppliers`);
-    return suppliers;
+    this.logger.log(`Found ${total} total suppliers, returning ${suppliers.length} for page ${page}`);
+    return createPaginatedResponse(suppliers, total, page, limit);
   }
 
   async findOne(id: string) {

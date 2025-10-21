@@ -13,7 +13,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
   return (
     <div className={`transition-all duration-300 ease-in-out ${isOpen ? 'lg:pl-64' : 'lg:pl-16'}`}>
       <Header />
-      <main className="py-6">
+      <main className="py-6 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {children}
         </div>
@@ -37,8 +37,11 @@ export default function DashboardLayout({
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-32 w-32 border-4 border-transparent border-t-green-400 border-r-blue-400"></div>
+          <div className="absolute inset-0 rounded-full h-32 w-32 border-4 border-transparent border-b-purple-400 border-l-red-400 animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+        </div>
       </div>
     )
   }
@@ -49,7 +52,7 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
         <Sidebar />
         <MainContent>{children}</MainContent>
       </div>

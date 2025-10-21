@@ -51,13 +51,13 @@ export default function CategoriesPage() {
   const router = useRouter()
 
   // Fetch categories with product counts
-  const { data: categories, isLoading, error } = useQuery<Category[]>({
+  const { data: categoriesResponse, isLoading, error } = useQuery<Category[]>({
     queryKey: ['categories', search],
     queryFn: async () => {
       console.log('🏷️ Fetching categories with search:', search)
       try {
         const response = await apiClient.get('/products/categories')
-        let categoriesData = response.data
+        let categoriesData = response.data?.data || response.data || []
         
         // Filter categories based on search
         if (search) {
@@ -74,6 +74,8 @@ export default function CategoriesPage() {
       }
     },
   })
+  
+  const categories = categoriesResponse || []
 
   // Create category mutation
   const createMutation = useMutation({
@@ -240,7 +242,7 @@ export default function CategoriesPage() {
     if (selectedCategories.length === categories?.length) {
       setSelectedCategories([])
     } else {
-      setSelectedCategories(categories?.map((c: Category) => c.id) || [])
+      setSelectedCategories((categories || [])?.map((c: Category) => c.id) || [])
     }
   }
 
@@ -302,8 +304,8 @@ export default function CategoriesPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Product Categories</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Product Categories</h1>
+            <p className="mt-1 text-lg text-gray-300">
               Manage product categories ({categories?.length || 0} total)
             </p>
           </div>
@@ -578,7 +580,7 @@ export default function CategoriesPage() {
 
       {categories?.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500">
+          <p className="text-gray-300">
             {search ? 'No categories found matching your search' : 'No categories found'}
           </p>
         </div>

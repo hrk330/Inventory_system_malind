@@ -86,7 +86,7 @@ export function Sidebar() {
       {/* Mobile sidebar overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={toggleSidebar}
         />
       )}
@@ -96,12 +96,12 @@ export function Sidebar() {
         "fixed inset-y-0 z-50 flex flex-col transition-all duration-300 ease-in-out",
         isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0 lg:w-16"
       )}>
-        <div className="flex grow flex-col gap-y-2 overflow-y-auto bg-white px-6 pb-4 shadow-sm">
+        <div className="flex grow flex-col gap-y-2 overflow-y-auto bg-black/20 backdrop-blur-xl border-r border-white/10 px-6 pb-4 shadow-2xl scrollbar-hide">
           <div className="flex h-20 shrink-0 items-center justify-center px-4">
             <div className="flex items-center justify-center w-full">
               {/* Logo - Clickable */}
               <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
-                <div className="relative h-16 w-40 flex-shrink-0">
+                <div className="relative h-16 w-40 flex-shrink-0 bg-white rounded-xl p-3 shadow-lg border-2 border-green-400/30">
             <Image
               src="/images/logo.png"
               alt="Malind Tech Logo"
@@ -146,15 +146,15 @@ export function Sidebar() {
                             title={!isOpen ? `Go to ${item.name}` : undefined}
                             className={cn(
                               isActive
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-gray-700 hover:text-primary hover:bg-gray-50',
-                              'group flex w-full items-center gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                                ? 'bg-green-500/20 text-green-400 border border-green-400/30'
+                                : 'text-gray-300 hover:text-green-400 hover:bg-white/10',
+                              'group flex w-full items-center gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all duration-300 backdrop-blur-sm'
                             )}
                           >
                             <item.icon
                               className={cn(
-                                isActive ? 'text-primary-foreground' : 'text-gray-400 group-hover:text-primary',
-                                'h-6 w-6 shrink-0'
+                                isActive ? 'text-green-400' : 'text-gray-400 group-hover:text-green-400',
+                                'h-6 w-6 shrink-0 transition-colors duration-300'
                               )}
                               aria-hidden="true"
                             />
@@ -183,9 +183,9 @@ export function Sidebar() {
                                       href={subItem.href}
                                       className={cn(
                                         isSubActive
-                                          ? 'bg-gray-100 text-gray-900 font-medium'
-                                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50',
-                                        'group flex items-center gap-x-3 rounded-md px-2 py-1.5 text-sm'
+                                          ? 'bg-green-500/10 text-green-400 font-medium border-l-2 border-green-400'
+                                          : 'text-gray-400 hover:text-green-400 hover:bg-white/5',
+                                        'group flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm transition-all duration-300'
                                       )}
                                     >
                                       <div className="w-1 h-1 bg-gray-400 rounded-full" />
@@ -202,15 +202,15 @@ export function Sidebar() {
                           href={item.href}
                           className={cn(
                             isActive
-                              ? 'bg-primary text-primary-foreground'
-                              : 'text-gray-700 hover:text-primary hover:bg-gray-50',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                              ? 'bg-green-500/20 text-green-400 border border-green-400/30'
+                              : 'text-gray-300 hover:text-green-400 hover:bg-white/10',
+                            'group flex gap-x-3 rounded-xl p-3 text-sm leading-6 font-semibold transition-all duration-300 backdrop-blur-sm'
                           )}
                         >
                           <item.icon
                             className={cn(
-                              isActive ? 'text-primary-foreground' : 'text-gray-400 group-hover:text-primary',
-                              'h-6 w-6 shrink-0'
+                              isActive ? 'text-green-400' : 'text-gray-400 group-hover:text-green-400',
+                              'h-6 w-6 shrink-0 transition-colors duration-300'
                             )}
                             aria-hidden="true"
                           />
@@ -228,7 +228,7 @@ export function Sidebar() {
             <li className="mt-auto">
               <Button
                 variant="ghost"
-                className="w-full justify-start"
+                className="w-full justify-start text-gray-300 hover:text-red-400 hover:bg-red-500/10 rounded-xl p-3 transition-all duration-300"
                 onClick={() => signOut({ callbackUrl: '/auth/login' })}
               >
                 <LogOut className="h-4 w-4 mr-2" />

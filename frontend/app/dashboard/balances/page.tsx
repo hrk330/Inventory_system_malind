@@ -120,16 +120,19 @@ export default function BalancesPage() {
   })
 
   // Fetch products for dropdowns
-  const { data: products } = useQuery({
+  const { data: productsResponse } = useQuery({
     queryKey: ['products'],
     queryFn: () => apiClient.get('/products').then(res => res.data),
   })
 
   // Fetch locations for dropdowns
-  const { data: locations } = useQuery({
+  const { data: locationsResponse } = useQuery({
     queryKey: ['locations'],
     queryFn: () => apiClient.get('/locations').then(res => res.data),
   })
+
+  const products = productsResponse?.data || productsResponse || []
+  const locations = locationsResponse?.data || locationsResponse || []
 
   // Stock adjustment mutation
   const adjustmentMutation = useMutation({
@@ -308,9 +311,9 @@ export default function BalancesPage() {
             <div className="flex items-center">
               <Package className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Products</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {new Set(balances?.map((b: any) => b.product.id)).size || 0}
+                <p className="text-sm font-medium text-gray-300">Total Products</p>
+                <p className="text-2xl font-semibold text-white">
+                  {new Set((balances?.data || balances || [])?.map((b: any) => b.product.id)).size || 0}
                 </p>
               </div>
             </div>
@@ -322,9 +325,9 @@ export default function BalancesPage() {
             <div className="flex items-center">
               <MapPin className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Locations</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {new Set(balances?.map((b: any) => b.location.id)).size || 0}
+                <p className="text-sm font-medium text-gray-300">Total Locations</p>
+                <p className="text-2xl font-semibold text-white">
+                  {new Set((balances?.data || balances || [])?.map((b: any) => b.location.id)).size || 0}
                 </p>
               </div>
             </div>
@@ -336,9 +339,9 @@ export default function BalancesPage() {
             <div className="flex items-center">
               <Package className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Stock Units</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {balances?.reduce((sum: number, balance: any) => sum + balance.quantity, 0) || 0}
+                <p className="text-sm font-medium text-gray-300">Total Stock Units</p>
+                <p className="text-2xl font-semibold text-white">
+                  {(balances?.data || balances || [])?.reduce((sum: number, balance: any) => sum + balance.quantity, 0) || 0}
                 </p>
               </div>
             </div>
@@ -350,9 +353,9 @@ export default function BalancesPage() {
             <div className="flex items-center">
               <TrendingUp className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Low Stock Items</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {balances?.filter((b: any) => b.quantity <= b.product.reorderLevel).length || 0}
+                <p className="text-sm font-medium text-gray-300">Low Stock Items</p>
+                <p className="text-2xl font-semibold text-white">
+                  {(balances?.data || balances || [])?.filter((b: any) => b.quantity <= b.product.reorderLevel).length || 0}
                 </p>
               </div>
             </div>
@@ -381,7 +384,7 @@ export default function BalancesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>
-                {locations?.map((location: Location) => (
+                {(locations?.data || locations)?.map((location: Location) => (
                   <SelectItem key={location.id} value={location.id}>
                     {location.name}
                   </SelectItem>
@@ -394,7 +397,7 @@ export default function BalancesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Products</SelectItem>
-                {products?.map((product: Product) => (
+                {(products?.data || products)?.map((product: Product) => (
                   <SelectItem key={product.id} value={product.id}>
                     {product.name}
                   </SelectItem>
@@ -444,18 +447,18 @@ export default function BalancesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {balances?.map((balance: StockBalance) => (
+              {(balances?.data || balances || [])?.map((balance: StockBalance) => (
                 <TableRow key={`${balance.product.id}-${balance.location.id}`}>
                   <TableCell>
                     <div>
                       <div className="font-medium">{balance.product.name}</div>
-                      <div className="text-sm text-gray-500">SKU: {balance.product.sku}</div>
+                      <div className="text-sm text-gray-300">SKU: {balance.product.sku}</div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div>
                       <div className="font-medium">{balance.location.name}</div>
-                      <div className="text-sm text-gray-500 capitalize">
+                      <div className="text-sm text-gray-300 capitalize">
                         {balance.location.type.toLowerCase()}
                       </div>
                     </div>
@@ -494,10 +497,10 @@ export default function BalancesPage() {
             </TableBody>
           </Table>
 
-          {balances?.length === 0 && (
+          {(balances?.data || balances || [])?.length === 0 && (
             <div className="text-center py-12">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No stock balances found</p>
+              <p className="text-gray-300">No stock balances found</p>
               <p className="text-sm text-gray-400 mt-2">
                 {search || locationFilter !== 'all' || productFilter !== 'all' 
                   ? 'Try adjusting your search or filters' 
@@ -526,7 +529,7 @@ export default function BalancesPage() {
                   <SelectValue placeholder="Select product" />
                 </SelectTrigger>
                 <SelectContent>
-                  {products?.map((product: Product) => (
+                  {(products?.data || products)?.map((product: Product) => (
                     <SelectItem key={product.id} value={product.id}>
                       {product.name} ({product.sku})
                     </SelectItem>
@@ -544,7 +547,7 @@ export default function BalancesPage() {
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations?.map((location: Location) => (
+                  {(locations?.data || locations)?.map((location: Location) => (
                     <SelectItem key={location.id} value={location.id}>
                       {location.name} ({location.type})
                     </SelectItem>
@@ -618,7 +621,7 @@ export default function BalancesPage() {
                   <SelectValue placeholder="Select product" />
                 </SelectTrigger>
                 <SelectContent>
-                  {products?.map((product: Product) => (
+                  {(products?.data || products)?.map((product: Product) => (
                     <SelectItem key={product.id} value={product.id}>
                       {product.name} ({product.sku})
                     </SelectItem>
@@ -633,7 +636,7 @@ export default function BalancesPage() {
                   <SelectValue placeholder="Select source location" />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations?.map((location: Location) => (
+                  {(locations?.data || locations)?.map((location: Location) => (
                     <SelectItem key={location.id} value={location.id}>
                       {location.name} ({location.type})
                     </SelectItem>
@@ -648,7 +651,7 @@ export default function BalancesPage() {
                   <SelectValue placeholder="Select destination location" />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations?.map((location: Location) => (
+                  {(locations?.data || locations)?.map((location: Location) => (
                     <SelectItem key={location.id} value={location.id}>
                       {location.name} ({location.type})
                     </SelectItem>

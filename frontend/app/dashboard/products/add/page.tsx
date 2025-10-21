@@ -82,7 +82,7 @@ export default function AddProductPage() {
   const { data: session, status } = useSession()
 
   // Fetch categories
-  const { data: categories } = useQuery<Category[]>({
+  const { data: categoriesResponse } = useQuery<Category[] | {data: Category[], meta: any}>({
     queryKey: ['categories'],
     queryFn: async () => {
       try {
@@ -94,9 +94,12 @@ export default function AddProductPage() {
       }
     },
   })
+  const categories: Category[] = Array.isArray(categoriesResponse) 
+    ? categoriesResponse 
+    : categoriesResponse?.data || []
 
   // Fetch UOMs
-  const { data: uoms } = useQuery<UOM[]>({
+  const { data: uomsResponse } = useQuery<UOM[] | {data: UOM[], meta: any}>({
     queryKey: ['uoms'],
     queryFn: async () => {
       try {
@@ -108,9 +111,12 @@ export default function AddProductPage() {
       }
     },
   })
+  const uoms: UOM[] = Array.isArray(uomsResponse) 
+    ? uomsResponse 
+    : uomsResponse?.data || []
 
   // Fetch suppliers
-  const { data: suppliers } = useQuery<Supplier[]>({
+  const { data: suppliersResponse } = useQuery<Supplier[] | {data: Supplier[], meta: any}>({
     queryKey: ['suppliers'],
     queryFn: async () => {
       try {
@@ -122,6 +128,9 @@ export default function AddProductPage() {
       }
     },
   })
+  const suppliers: Supplier[] = Array.isArray(suppliersResponse) 
+    ? suppliersResponse 
+    : suppliersResponse?.data || []
 
   // Create product mutation
   const createMutation = useMutation({
@@ -312,8 +321,8 @@ export default function AddProductPage() {
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Add New Product</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Add New Product</h1>
+            <p className="mt-1 text-lg text-gray-300">
               Create a new product in your inventory
             </p>
           </div>
@@ -457,7 +466,7 @@ export default function AddProductPage() {
                     {...register('barcode')}
                     placeholder="Enter barcode (optional)"
                   />
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-300 mt-1">
                     Leave empty if no barcode available. Each barcode must be unique.
                   </p>
                 </div>

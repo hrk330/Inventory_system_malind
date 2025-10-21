@@ -234,8 +234,8 @@ export default function BulkImportPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Products
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Bulk Import Products</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-white">Bulk Import Products</h1>
+          <p className="mt-1 text-lg text-gray-300">
             Import multiple products at once using CSV or Excel files
           </p>
         </div>
@@ -258,7 +258,7 @@ export default function BulkImportPage() {
               <Download className="h-4 w-4" />
               Download Sample Template
             </Button>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-300">
               <p>• Excel format with multiple reference sheets</p>
               <p>• Follow the template structure for best results</p>
               <p>• Required fields: Product Name, UOM (see UOM Reference sheet)</p>
@@ -308,7 +308,7 @@ export default function BulkImportPage() {
                   <CheckCircle className="h-6 w-6" />
                   <span className="font-medium">{selectedFile.name}</span>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-300">
                   File size: {(selectedFile.size / 1024).toFixed(1)} KB
                 </div>
                 <div className="flex gap-2 justify-center">
@@ -326,10 +326,10 @@ export default function BulkImportPage() {
               <div className="space-y-4">
                 <Upload className="h-12 w-12 mx-auto text-gray-400" />
                 <div>
-                  <p className="text-lg font-medium text-gray-900">
+                  <p className="text-lg font-medium text-white">
                     {dragActive ? 'Drop your file here' : 'Drag and drop your file here'}
                   </p>
-                  <p className="text-sm text-gray-600">or</p>
+                  <p className="text-sm text-gray-300">or</p>
                   <Button
                     onClick={() => fileInputRef.current?.click()}
                     variant="outline"
@@ -338,7 +338,7 @@ export default function BulkImportPage() {
                     Browse Files
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-400">
                   Supports CSV and Excel files (.csv, .xlsx, .xls)
                 </p>
               </div>
@@ -359,7 +359,7 @@ export default function BulkImportPage() {
           <CardContent>
             <div className="space-y-4">
               <Progress value={importProgress} className="w-full" />
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-300">
                 Processing your file... {importProgress}%
               </p>
             </div>
@@ -408,7 +408,7 @@ export default function BulkImportPage() {
                 
                 {importResult.data.errors.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Errors:</h4>
+                    <h4 className="font-medium text-white mb-2">Errors:</h4>
                     <div className="max-h-40 overflow-y-auto">
                       {importResult.data.errors.map((error, index) => (
                         <div key={index} className="text-sm text-red-600 p-2 bg-red-50 rounded mb-1">
@@ -444,7 +444,7 @@ export default function BulkImportPage() {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-300">
               Found {previewData.length} products to import
             </div>
             
@@ -477,7 +477,7 @@ export default function BulkImportPage() {
               </Table>
               
               {previewData.length > 10 && (
-                <div className="text-center text-sm text-gray-500 mt-2">
+                <div className="text-center text-sm text-gray-400 mt-2">
                   ... and {previewData.length - 10} more products
                 </div>
               )}

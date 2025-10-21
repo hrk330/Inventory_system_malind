@@ -127,7 +127,7 @@ export default function BulkImportHistoryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Bulk Import History</h1>
-          <p className="text-gray-600">View and manage all bulk import operations</p>
+          <p className="text-gray-300">View and manage all bulk import operations</p>
         </div>
         <Button onClick={() => refetch()} variant="outline">
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -139,8 +139,8 @@ export default function BulkImportHistoryPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-600 mb-2">No Import History</h3>
-            <p className="text-gray-500 text-center">
+            <h3 className="text-lg font-semibold text-gray-300 mb-2">No Import History</h3>
+            <p className="text-gray-400 text-center">
               No bulk import operations have been performed yet.
             </p>
           </CardContent>
@@ -254,7 +254,7 @@ export default function BulkImportHistoryPage() {
                           <User className="h-4 w-4 text-gray-400" />
                           <div>
                             <div className="font-medium text-sm">{record.user.name}</div>
-                            <div className="text-xs text-gray-500">{record.user.email}</div>
+                            <div className="text-xs text-gray-400">{record.user.email}</div>
                           </div>
                         </div>
                       </TableCell>
@@ -263,7 +263,8 @@ export default function BulkImportHistoryPage() {
                           <Calendar className="h-4 w-4 text-gray-400" />
                           <div className="text-sm">
                             <div>{new Date(record.createdAt).toLocaleDateString()}</div>
-                            <div className="text-xs text-gray-500">
+انون
+                            <div className="text-xs text-gray-400">
                               {new Date(record.createdAt).toLocaleTimeString()}
                             </div>
                           </div>
@@ -326,31 +327,31 @@ export default function BulkImportHistoryPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">File Name</label>
+                  <label className="text-sm font-medium text-gray-300">File Name</label>
                   <p className="text-sm">{selectedRecord.originalFileName}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <label className="text-sm font-medium text-gray-300">Status</label>
                   <div className="flex items-center space-x-2">
                     {getStatusIcon(selectedRecord.status)}
                     {getStatusBadge(selectedRecord.status)}
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Total Records</label>
+                  <label className="text-sm font-medium text-gray-300">Total Records</label>
                   <p className="text-sm">{selectedRecord.totalRecords}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Success Rate</label>
+                  <label className="text-sm font-medium text-gray-300">Success Rate</label>
                   <p className="text-sm">{getSuccessRate(selectedRecord)}%</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Created At</label>
+                  <label className="text-sm font-medium text-gray-300">Created At</label>
                   <p className="text-sm">{new Date(selectedRecord.createdAt).toLocaleString()}</p>
                 </div>
                 {selectedRecord.completedAt && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Completed At</label>
+                    <label className="text-sm font-medium text-gray-300">Completed At</label>
                     <p className="text-sm">{new Date(selectedRecord.completedAt).toLocaleString()}</p>
                   </div>
                 )}
@@ -358,7 +359,7 @@ export default function BulkImportHistoryPage() {
 
               {selectedRecord.summary && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Summary</label>
+                  <label className="text-sm font-medium text-gray-300">Summary</label>
                   <div className="mt-2 grid grid-cols-2 gap-4">
                     <div className="bg-green-50 p-3 rounded">
                       <p className="text-sm font-medium text-green-800">Products Created</p>
@@ -390,7 +391,7 @@ export default function BulkImportHistoryPage() {
 
               {selectedRecord.errors && selectedRecord.errors.length > 0 && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Errors</label>
+                  <label className="text-sm font-medium text-gray-300">Errors</label>
                   <div className="mt-2 space-y-2">
                     {selectedRecord.errors.map((error, index) => (
                       <Alert key={index} variant="destructive">

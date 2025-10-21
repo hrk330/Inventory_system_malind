@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, ConflictException, Logger } from '@nestj
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { createPaginatedResponse, getPaginationParams } from '../common/utils/pagination.helper';
 
 @Injectable()
 export class LocationsService {
@@ -24,7 +26,14 @@ export class LocationsService {
     });
   }
 
-  async findAll(search?: string, type?: string) {
+  async findAll(
+    paginationDto: PaginationDto,
+    search?: string,
+    type?: string
+  ) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const { skip, take } = getPaginationParams(page, limit);
+    
     const where: any = {};
     
     if (search) {
@@ -38,10 +47,17 @@ export class LocationsService {
       where.type = type;
     }
 
-    return this.prisma.location.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    const [locations, total] = await Promise.all([
+      this.prisma.location.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.location.count({ where }),
+    ]);
+
+    return createPaginatedResponse(locations, total, page, limit);
   }
 
   async findOne(id: string) {

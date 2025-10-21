@@ -1,5 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -15,12 +17,17 @@ import { SuppliersModule } from './suppliers/suppliers.module';
 import { ProductVariantsModule } from './product-variants/product-variants.module';
 import { UOMsModule } from './uoms/uoms.module';
 import { CategoriesModule } from './categories/categories.module';
+import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 60 seconds
+      limit: 100, // 100 requests per ttl
+    }]),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -37,5 +44,15 @@ import { CategoriesModule } from './categories/categories.module';
     UOMsModule,
     CategoriesModule,
   ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

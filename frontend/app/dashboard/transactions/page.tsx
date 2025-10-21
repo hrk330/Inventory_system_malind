@@ -44,7 +44,7 @@ export default function TransactionsPage() {
       case 'ADJUSTMENT':
         return 'text-orange-600 bg-orange-100'
       default:
-        return 'text-gray-600 bg-gray-100'
+        return 'text-green-400 bg-green-500/20 border border-green-400/30'
     }
   }
 
@@ -66,8 +66,8 @@ export default function TransactionsPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Stock Transactions</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-3xl font-bold text-white">Stock Transactions</h1>
+            <p className="mt-1 text-lg text-gray-300">
               View and manage all stock movements
             </p>
           </div>
@@ -88,7 +88,7 @@ export default function TransactionsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {transactions?.map((transaction: any) => (
+            {(transactions?.data || transactions || [])?.map((transaction: any) => (
               <div key={transaction.id} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -102,7 +102,7 @@ export default function TransactionsPage() {
                           {transaction.type}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-300">
                         {transaction.referenceNo && `Ref: ${transaction.referenceNo}`}
                         {transaction.remarks && ` • ${transaction.remarks}`}
                       </div>
@@ -112,7 +112,7 @@ export default function TransactionsPage() {
                     <div className="font-medium">
                       {transaction.quantity} {transaction.product.unit}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-300">
                       {new Date(transaction.createdAt).toLocaleDateString()}
                     </div>
                   </div>
@@ -147,9 +147,9 @@ export default function TransactionsPage() {
             ))}
           </div>
 
-          {transactions?.length === 0 && (
+          {(transactions?.data || transactions || [])?.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">No transactions found</p>
+              <p className="text-gray-300">No transactions found</p>
             </div>
           )}
         </CardContent>

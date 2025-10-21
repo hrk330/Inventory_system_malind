@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { StocktakeService } from './stocktake.service';
 import { CreateStocktakeDto } from './dto/create-stocktake.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('Stocktake')
 @Controller('stocktake')
@@ -42,10 +43,11 @@ export class StocktakeController {
   @ApiQuery({ name: 'productId', required: false, description: 'Filter by product ID' })
   @ApiQuery({ name: 'locationId', required: false, description: 'Filter by location ID' })
   findAll(
+    @Query() paginationDto: PaginationDto,
     @Query('productId') productId?: string,
     @Query('locationId') locationId?: string,
   ) {
-    return this.stocktakeService.findAll(productId, locationId);
+    return this.stocktakeService.findAll(paginationDto, productId, locationId);
   }
 
   @Get('summary')

@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { StockTransactionsService } from './stock-transactions.service';
 import { CreateStockTransactionDto } from './dto/create-stock-transaction.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('Stock Transactions')
 @Controller('stock/transactions')
@@ -27,11 +28,12 @@ export class StockTransactionsController {
   @ApiQuery({ name: 'locationId', required: false, description: 'Filter by location ID' })
   @ApiQuery({ name: 'type', required: false, description: 'Filter by transaction type' })
   findAll(
+    @Query() paginationDto: PaginationDto,
     @Query('productId') productId?: string,
     @Query('locationId') locationId?: string,
     @Query('type') type?: string,
   ) {
-    return this.stockTransactionsService.findAll(productId, locationId, type);
+    return this.stockTransactionsService.findAll(paginationDto, productId, locationId, type);
   }
 
   @Get(':id')
