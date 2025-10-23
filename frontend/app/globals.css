@@ -84,6 +84,14 @@
         @apply glass-card glass-card-hover p-6 relative overflow-hidden;
     }
 
+    .stat-card .icon-container {
+        @apply flex items-center justify-center;
+    }
+
+    .stat-card .icon-container svg {
+        @apply flex-shrink-0;
+    }
+
     .stat-card::before {
         content: '';
         position: absolute;

@@ -13,7 +13,7 @@ export class StockTransactionsService {
   ) {}
 
   async create(createStockTransactionDto: CreateStockTransactionDto, userId: string) {
-    const { productId, fromLocationId, toLocationId, type, quantity, referenceNo, remarks } = createStockTransactionDto;
+    const { productId, fromLocationId, toLocationId, type, quantity, referenceNo, remarks, saleId } = createStockTransactionDto;
 
     // Validate product exists
     const product = await this.prisma.product.findUnique({
@@ -78,6 +78,7 @@ export class StockTransactionsService {
           quantity,
           referenceNo: finalReferenceNo,
           remarks,
+          saleId,
           createdBy: userId,
         },
       });

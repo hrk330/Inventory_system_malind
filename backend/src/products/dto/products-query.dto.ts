@@ -38,4 +38,9 @@ export class ProductsQueryDto {
   @IsString()
   @IsIn(['active', 'inactive', 'all'])
   status?: string = 'all';
+
+  @ApiProperty({ required: false, description: 'Filter by location ID' })
+  @IsOptional()
+  @IsString()
+  locationId?: string;
 }

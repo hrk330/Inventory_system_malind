@@ -60,6 +60,26 @@ export class LocationsService {
     return createPaginatedResponse(locations, total, page, limit);
   }
 
+  // Optimized method for POS - faster loading
+  async findAllForPOS() {
+    this.logger.log('🚀 Fast locations query for POS');
+    
+    const locations = await this.prisma.location.findMany({
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        address: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { name: 'asc' }, // Alphabetical order for POS
+    });
+
+    this.logger.log(`⚡ POS locations query returned ${locations.length} locations`);
+    return locations;
+  }
+
   async findOne(id: string) {
     const location = await this.prisma.location.findUnique({
       where: { id },

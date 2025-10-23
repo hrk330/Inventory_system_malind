@@ -17,6 +17,9 @@ import { SuppliersModule } from './suppliers/suppliers.module';
 import { ProductVariantsModule } from './product-variants/product-variants.module';
 import { UOMsModule } from './uoms/uoms.module';
 import { CategoriesModule } from './categories/categories.module';
+import { CustomersModule } from './customers/customers.module';
+import { PosModule } from './pos/pos.module';
+import { ReceiptsModule } from './receipts/receipts.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 @Module({
@@ -43,6 +46,9 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     ProductVariantsModule,
     UOMsModule,
     CategoriesModule,
+    CustomersModule,
+    PosModule,
+    ReceiptsModule,
   ],
   providers: [
     {

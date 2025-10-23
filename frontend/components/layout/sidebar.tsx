@@ -24,6 +24,10 @@ import {
   Upload,
   Menu,
   X,
+  CreditCard,
+  ShoppingCart,
+  Receipt,
+  Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { signOut } from 'next-auth/react'
@@ -32,6 +36,18 @@ import { useSidebar } from '@/contexts/sidebar-context'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
+  { 
+    name: 'POS', 
+    href: '/dashboard/pos', 
+    icon: CreditCard,
+    hasSubmenu: true,
+    submenu: [
+      { name: 'Point of Sale', href: '/pos', icon: ShoppingCart },
+      { name: 'Sales History', href: '/dashboard/pos/history', icon: Receipt },
+      { name: 'Customers', href: '/dashboard/customers', icon: Users },
+      { name: 'Reports', href: '/dashboard/pos/reports', icon: BarChart3 },
+    ]
+  },
   { 
     name: 'Products', 
     href: '/dashboard/products', 
@@ -60,7 +76,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { isOpen, toggleSidebar } = useSidebar()
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Products'])
+  const [expandedItems, setExpandedItems] = useState<string[]>(['POS', 'Products'])
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 
@@ -229,7 +245,15 @@ export function Sidebar() {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-gray-300 hover:text-red-400 hover:bg-red-500/10 rounded-xl p-3 transition-all duration-300"
-                onClick={() => signOut({ callbackUrl: '/auth/login' })}
+                onClick={() => {
+                  // Clear POS session data before logout
+                  sessionStorage.removeItem('pos-selected-location');
+                  sessionStorage.removeItem('pos-session-id');
+                  sessionStorage.removeItem('pos-session-location');
+                  sessionStorage.removeItem('pos-last-session');
+                  // Then logout
+                  signOut({ callbackUrl: '/auth/login' });
+                }}
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 <span className={cn(

@@ -149,12 +149,17 @@ export class ProductsService {
     paginationDto: PaginationDto,
     search?: string,
     category?: string,
-    status?: string
+    status?: string,
+    locationId?: string
   ) {
     const { page = 1, limit = 10 } = paginationDto;
     const { skip, take } = getPaginationParams(page, limit);
     
-    this.logger.log(`Fetching products - search: ${search || 'none'}, category: ${category || 'all'}, status: ${status || 'all'}`);
+    this.logger.log(`Fetching products - search: ${search || 'none'}, category: ${category || 'all'}, status: ${status || 'all'}, location: ${locationId || 'all'}`);
+    
+    if (locationId) {
+      this.logger.log(`🔍 Filtering products for location: ${locationId}`);
+    }
     
     const where: any = {
       deletedAt: null, // Exclude soft-deleted products by default
@@ -199,10 +204,28 @@ export class ProductsService {
     }
     // If status is 'all' or not specified, show all non-deleted products
 
+    // Filter by location if specified - only show products that have stock balances at this location
+    if (locationId) {
+      where.stockBalances = {
+        some: {
+          locationId: locationId
+        }
+      };
+    }
+
+    // Optimized query with minimal data fetching for POS
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          barcode: true,
+          sellingPrice: true,
+          costPrice: true,
+          isActive: true,
+          createdAt: true,
           uom: {
             select: {
               id: true,
@@ -217,10 +240,13 @@ export class ProductsService {
             }
           },
           stockBalances: {
+            where: locationId ? { locationId: locationId } : {},
             select: {
               quantity: true,
+              locationId: true,
               location: {
                 select: {
+                  id: true,
                   name: true
                 }
               }
@@ -235,7 +261,81 @@ export class ProductsService {
     ]);
 
     this.logger.log(`Found ${total} total products, returning ${products.length} for page ${page}`);
+    
+    if (locationId) {
+      this.logger.log(`📍 Products found for location ${locationId}: ${products.length}`);
+      products.forEach(product => {
+        this.logger.log(`  - ${product.name}: ${product.stockBalances?.[0]?.quantity || 0} units`);
+      });
+    }
+    
     return createPaginatedResponse(products, total, page, limit);
+  }
+
+  // Optimized method specifically for POS - faster loading
+  async findForPOS(locationId: string, search?: string, limit: number = 50) {
+    this.logger.log(`🚀 Fast POS query for location: ${locationId}, search: ${search || 'none'}`);
+    
+    const where: any = {
+      deletedAt: null,
+      isActive: true, // Only active products for POS
+    };
+
+    // Search filter - optimized for POS
+    if (search && search.length >= 2) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { sku: { contains: search, mode: 'insensitive' } },
+        { barcode: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Filter by location
+    if (locationId) {
+      where.stockBalances = {
+        some: {
+          locationId: locationId
+        }
+      };
+    }
+
+    const products = await this.prisma.product.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        barcode: true,
+        sellingPrice: true,
+        costPrice: true,
+        isActive: true, // Include isActive field in response
+        uom: {
+          select: {
+            id: true,
+            name: true,
+            symbol: true
+          }
+        },
+        category: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        stockBalances: {
+          where: { locationId: locationId },
+          select: {
+            quantity: true,
+            locationId: true
+          }
+        }
+      },
+      orderBy: { name: 'asc' }, // Alphabetical order for POS
+      take: limit,
+    });
+
+    this.logger.log(`⚡ POS query returned ${products.length} products in optimized format`);
+    return products;
   }
 
   async findOne(id: string) {

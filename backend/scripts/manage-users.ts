@@ -7,9 +7,9 @@ async function createAdminUser() {
   try {
     console.log('🔐 Creating new admin user...');
     
-    const email = 'admin@gmail.com';
-    const password = '123456789';
-    const name = 'Admin User';
+    const email = 'hamza@gmail.com';
+    const password = '12345678';
+    const name = 'Hamza Admin';
     
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -17,7 +17,7 @@ async function createAdminUser() {
     });
     
     if (existingUser) {
-      console.log('❌ User with email admin@gmail.com already exists');
+      console.log('❌ User with email hamza@gmail.com already exists');
       return;
     }
     
@@ -138,10 +138,6 @@ async function main() {
     
     // Create new admin user
     await createAdminUser();
-    console.log('\n' + '='.repeat(80) + '\n');
-    
-    // Update existing user password
-    await updateExistingUserPassword();
     console.log('\n' + '='.repeat(80) + '\n');
     
     // List users again to show changes

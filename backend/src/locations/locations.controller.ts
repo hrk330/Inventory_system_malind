@@ -32,6 +32,13 @@ export class LocationsController {
     return this.locationsService.findAll(paginationDto, search, type);
   }
 
+  @Get('pos')
+  @ApiOperation({ summary: 'Get locations optimized for POS' })
+  @ApiResponse({ status: 200, description: 'Locations retrieved successfully for POS' })
+  findAllForPOS() {
+    return this.locationsService.findAllForPOS();
+  }
+
   @Get('types')
   @ApiOperation({ summary: 'Get all location types' })
   @ApiResponse({ status: 200, description: 'Types retrieved successfully' })

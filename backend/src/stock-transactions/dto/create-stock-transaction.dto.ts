@@ -40,4 +40,10 @@ export class CreateStockTransactionDto {
   @IsOptional()
   @IsString()
   remarks?: string;
+
+  @ApiProperty({ example: 'uuid-of-sale', description: 'Sale ID for POS transactions', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  saleId?: string;
 }

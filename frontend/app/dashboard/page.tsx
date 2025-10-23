@@ -149,17 +149,17 @@ export default function DashboardPage() {
             <div key={stat.name} className={`stat-card tech-glow ${stat.borderColor}`}>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                 <div className="flex items-center space-x-4">
-                  <div className={`p-3 sm:p-4 rounded-2xl ${stat.bgColor} border ${stat.borderColor} backdrop-blur-sm`}>
-                    <stat.icon className={`h-6 w-6 sm:h-8 sm:w-8 ${stat.color}`} />
+                  <div className={`p-2 sm:p-3 rounded-2xl ${stat.bgColor} border ${stat.borderColor} backdrop-blur-sm icon-container`}>
+                    <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${stat.color} flex-shrink-0`} />
                   </div>
                   <div>
                     <p className="text-xs sm:text-sm font-medium text-gray-400">{stat.name}</p>
                     <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
                   </div>
                 </div>
-                <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r ${stat.gradient} flex items-center justify-center`}>
-                  <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-full ${stat.bgColor} flex items-center justify-center`}>
-                    <stat.icon className={`h-4 w-4 sm:h-6 sm:w-6 ${stat.color}`} />
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r ${stat.gradient} flex items-center justify-center icon-container`}>
+                  <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full ${stat.bgColor} flex items-center justify-center icon-container`}>
+                    <stat.icon className={`h-3 w-3 sm:h-4 sm:w-4 ${stat.color} flex-shrink-0`} />
                   </div>
                 </div>
               </div>

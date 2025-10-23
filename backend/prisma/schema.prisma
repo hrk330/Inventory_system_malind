@@ -25,6 +25,12 @@ model User {
   performedStocktakes Stocktake[]
   auditLogs          AuditLog[]
   bulkImportRecords  BulkImportRecord[]
+  createdSales       Sale[]           @relation("SaleCreator")
+  cancelledSales     Sale[]           @relation("SaleCanceller")
+  processedPayments  Payment[]
+  generatedReceipts  Receipt[]
+  processedRefunds   SaleRefund[]     @relation("RefundProcessor")
+  approvedRefunds    SaleRefund[]     @relation("RefundApprover")
 
   @@map("users")
 }
@@ -70,6 +76,7 @@ model Product {
   stockTransactions StockTransaction[]
   stocktakes        Stocktake[]
   variants          ProductVariant[]
+  saleItems         SaleItem[]
   supplier          Supplier? @relation(fields: [supplierId], references: [id])
   uom               UOM       @relation(fields: [uomId], references: [id])
   category          Category? @relation(fields: [categoryId], references: [id])
@@ -90,6 +97,7 @@ model Location {
   fromTransactions  StockTransaction[] @relation("FromLocation")
   toTransactions    StockTransaction[] @relation("ToLocation")
   stocktakes        Stocktake[]
+  sales             Sale[]
 
   @@map("locations")
 }
@@ -114,6 +122,7 @@ model StockTransaction {
   productId      String            @map("product_id")
   fromLocationId String?           @map("from_location_id")
   toLocationId   String?           @map("to_location_id")
+  saleId         String?           @map("sale_id")
   type           TransactionType
   quantity       Float
   referenceNo    String?           @map("reference_no")
@@ -125,6 +134,7 @@ model StockTransaction {
   product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   fromLocation Location? @relation("FromLocation", fields: [fromLocationId], references: [id])
   toLocation   Location? @relation("ToLocation", fields: [toLocationId], references: [id])
+  sale         Sale?     @relation(fields: [saleId], references: [id])
   creator      User      @relation(fields: [createdBy], references: [id])
 
   @@map("stock_transactions")
@@ -256,4 +266,221 @@ model BulkImportRecord {
   user User @relation(fields: [userId], references: [id])
 
   @@map("bulk_import_records")
+}
+
+// POS System Models
+
+model Customer {
+  id               String   @id @default(uuid())
+  customerNumber   String   @unique @map("customer_number")
+  name             String
+  email            String?  @unique
+  phone            String?
+  address          String?
+  city            String?
+  postalCode        String?  @map("postal_code")
+  loyaltyPoints    Int      @default(0) @map("loyalty_points")
+  totalPurchases   Decimal  @default(0) @map("total_purchases") @db.Decimal(10, 2)
+  lastPurchaseDate DateTime? @map("last_purchase_date")
+  notes            String?
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  sales Sale[]
+
+  @@map("customers")
+}
+
+model Sale {
+  id                String        @id @default(uuid())
+  saleNumber        String        @unique @map("sale_number")
+  customerId        String?       @map("customer_id")
+  locationId        String        @map("location_id")
+  saleType          SaleType      @map("sale_type")
+  saleDate          DateTime      @default(now()) @map("sale_date")
+  subtotal          Decimal       @db.Decimal(10, 2)
+  taxRate           Decimal       @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  taxAmount         Decimal       @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  discountType      DiscountType? @map("discount_type")
+  discountRate      Decimal?      @map("discount_rate") @db.Decimal(5, 2)
+  discountAmount    Decimal       @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  totalAmount       Decimal       @map("total_amount") @db.Decimal(10, 2)
+  amountPaid        Decimal       @default(0) @map("amount_paid") @db.Decimal(10, 2)
+  changeGiven       Decimal       @default(0) @map("change_given") @db.Decimal(10, 2)
+  paymentStatus     PaymentStatus @default(PENDING) @map("payment_status")
+  status            SaleStatus    @default(DRAFT)
+  createdBy         String        @map("created_by")
+  completedAt       DateTime?     @map("completed_at")
+  cancelledAt       DateTime?     @map("cancelled_at")
+  cancelledBy       String?       @map("cancelled_by")
+  cancellationReason String?      @map("cancellation_reason")
+  notes             String?
+  customerNotes     String?       @map("customer_notes")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  customer         Customer?      @relation(fields: [customerId], references: [id])
+  location         Location       @relation(fields: [locationId], references: [id])
+  creator          User           @relation("SaleCreator", fields: [createdBy], references: [id])
+  canceller        User?          @relation("SaleCanceller", fields: [cancelledBy], references: [id])
+  saleItems        SaleItem[]
+  payments         Payment[]
+  receipts         Receipt[]
+  stockTransactions StockTransaction[]
+  refunds          SaleRefund[]   @relation("OriginalSale")
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id                String        @id @default(uuid())
+  saleId            String        @map("sale_id")
+  productId         String?       @map("product_id")
+  itemType          ItemType      @map("item_type")
+  itemName          String        @map("item_name")
+  itemDescription   String?        @map("item_description")
+  sku               String?
+  barcode           String?
+  quantity          Decimal       @db.Decimal(10, 3)
+  unitPrice         Decimal       @map("unit_price") @db.Decimal(10, 2)
+  costPrice         Decimal?      @map("cost_price") @db.Decimal(10, 2)
+  lineSubtotal      Decimal       @map("line_subtotal") @db.Decimal(10, 2)
+  itemTaxRate       Decimal       @default(0) @map("item_tax_rate") @db.Decimal(5, 2)
+  itemTaxAmount     Decimal       @default(0) @map("item_tax_amount") @db.Decimal(10, 2)
+  itemDiscountType  DiscountType? @map("item_discount_type")
+  itemDiscountRate  Decimal?      @map("item_discount_rate") @db.Decimal(5, 2)
+  itemDiscountAmount Decimal      @default(0) @map("item_discount_amount") @db.Decimal(10, 2)
+  lineTotal         Decimal       @map("line_total") @db.Decimal(10, 2)
+  notes             String?
+  createdAt         DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  saleId          String        @map("sale_id")
+  paymentMethod   PaymentMethod @map("payment_method")
+  amount          Decimal       @db.Decimal(10, 2)
+  referenceNumber String?       @map("reference_number")
+  cardLastFour    String?       @map("card_last_four")
+  cardType        String?       @map("card_type")
+  bankName        String?       @map("bank_name")
+  chequeNumber    String?       @map("cheque_number")
+  paymentDate     DateTime      @default(now()) @map("payment_date")
+  processedBy     String        @map("processed_by")
+  notes           String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  sale      Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  processor User @relation(fields: [processedBy], references: [id])
+
+  @@map("payments")
+}
+
+model Receipt {
+  id            String        @id @default(uuid())
+  saleId        String        @map("sale_id")
+  receiptNumber String        @unique @map("receipt_number")
+  receiptType   ReceiptType   @map("receipt_type")
+  format        ReceiptFormat
+  filePath      String?       @map("file_path")
+  emailedTo     String?       @map("emailed_to")
+  emailedAt     DateTime?     @map("emailed_at")
+  printedAt     DateTime?     @map("printed_at")
+  printCount    Int           @default(0) @map("print_count")
+  generatedBy   String        @map("generated_by")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  sale      Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  generator User  @relation(fields: [generatedBy], references: [id])
+
+  @@map("receipts")
+}
+
+model SaleRefund {
+  id              String        @id @default(uuid())
+  originalSaleId  String        @map("original_sale_id")
+  refundNumber    String        @unique @map("refund_number")
+  refundType      RefundType    @map("refund_type")
+  refundAmount    Decimal       @map("refund_amount") @db.Decimal(10, 2)
+  refundMethod    PaymentMethod @map("refund_method")
+  reason          String
+  processedBy     String        @map("processed_by")
+  approvedBy      String        @map("approved_by")
+  notes           String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  originalSale Sale @relation("OriginalSale", fields: [originalSaleId], references: [id])
+  processor    User @relation("RefundProcessor", fields: [processedBy], references: [id])
+  approver     User @relation("RefundApprover", fields: [approvedBy], references: [id])
+
+  @@map("sale_refunds")
+}
+
+// POS System Enums
+
+enum SaleType {
+  RETAIL
+  SERVICE
+}
+
+enum ItemType {
+  PRODUCT
+  SERVICE
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE_PAYMENT
+  BANK_TRANSFER
+  CHEQUE
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  REFUNDED
+  CANCELLED
+}
+
+enum SaleStatus {
+  DRAFT
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum ReceiptType {
+  ORIGINAL
+  DUPLICATE
+  REFUND
+}
+
+enum ReceiptFormat {
+  PDF
+  THERMAL
+}
+
+enum RefundType {
+  FULL
+  PARTIAL
 }

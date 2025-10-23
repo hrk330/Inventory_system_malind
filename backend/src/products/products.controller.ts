@@ -36,9 +36,20 @@ export class ProductsController {
   @ApiOperation({ summary: 'Get all products' })
   @ApiResponse({ status: 200, description: 'Products retrieved successfully' })
   findAll(@Query() queryDto: ProductsQueryDto) {
-    const { page, limit, search, category, status } = queryDto;
+    const { page, limit, search, category, status, locationId } = queryDto;
     const paginationDto = { page, limit };
-    return this.productsService.findAll(paginationDto, search, category, status);
+    return this.productsService.findAll(paginationDto, search, category, status, locationId);
+  }
+
+  @Get('pos')
+  @ApiOperation({ summary: 'Get products optimized for POS' })
+  @ApiResponse({ status: 200, description: 'Products retrieved successfully for POS' })
+  findForPOS(
+    @Query('locationId') locationId: string,
+    @Query('search') search?: string,
+    @Query('limit') limit?: number
+  ) {
+    return this.productsService.findForPOS(locationId, search, limit);
   }
 
   @Get('categories')

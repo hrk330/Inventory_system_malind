@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -48,25 +48,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex relative">
+      {/* Full Width Video Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover"
+        >
+          <source src="/videos/background.mp4" type="video/mp4" />
+          {/* Fallback image if video doesn't load */}
+          <div className="w-full h-full bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800"></div>
+        </video>
+        {/* Overlay for text readability */}
+        <div className="absolute inset-0 bg-black/40"></div>
+      </div>
+
       {/* Left Section - Marketing Content */}
-      <div className="hidden lg:flex lg:w-[65%] relative overflow-hidden">
-        {/* Video Background */}
-        <div className="absolute inset-0">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover"
-          >
-            <source src="/videos/background.mp4" type="video/mp4" />
-            {/* Fallback image if video doesn't load */}
-            <div className="w-full h-full bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800"></div>
-          </video>
-          {/* Overlay for text readability */}
-          <div className="absolute inset-0 bg-black/40"></div>
-        </div>
+      <div className="hidden lg:flex lg:w-[65%] relative z-10">
         
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center px-12 py-16 text-white">
@@ -135,7 +136,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Section - Login Form */}
-      <div className="w-full lg:w-[35%] flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-8 relative overflow-hidden">
+      <div className="w-full lg:w-[35%] flex items-center justify-center bg-black/30 backdrop-blur-sm p-8 relative z-10 overflow-hidden">
         {/* Tech Pattern Overlay */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-10 right-10 w-32 h-32 bg-green-400 rounded-full blur-3xl"></div>

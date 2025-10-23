@@ -263,7 +263,6 @@ export default function BulkImportHistoryPage() {
                           <Calendar className="h-4 w-4 text-gray-400" />
                           <div className="text-sm">
                             <div>{new Date(record.createdAt).toLocaleDateString()}</div>
-انون
                             <div className="text-xs text-gray-400">
                               {new Date(record.createdAt).toLocaleTimeString()}
                             </div>
