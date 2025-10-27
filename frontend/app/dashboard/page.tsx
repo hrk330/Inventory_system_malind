@@ -38,7 +38,7 @@ export default function DashboardPage() {
 
   const totalProducts = products?.data?.length || products?.length || 0
   const totalLocations = locations?.data?.length || locations?.length || 0
-  const totalStockValue = stockBalances?.data?.reduce((sum: number, balance: any) => sum + balance.quantity, 0) || stockBalances?.reduce((sum: number, balance: any) => sum + balance.quantity, 0) || 0
+  const totalStockValue = Array.isArray(stockBalances?.data) ? stockBalances.data.reduce((sum: number, balance: any) => sum + balance.quantity, 0) : Array.isArray(stockBalances) ? stockBalances.reduce((sum: number, balance: any) => sum + balance.quantity, 0) : 0
   const totalAlerts = reorderAlerts?.length || 0
 
   const stats = [
