@@ -161,6 +161,8 @@ export class ProductsService {
       this.logger.log(`🔍 Filtering products for location: ${locationId}`);
     }
     
+    this.logger.log(`📊 Status filter: ${status}, will apply filter: ${status === 'active' ? 'active only' : status === 'inactive' ? 'inactive only' : 'all products'}`);
+    
     const where: any = {
       deletedAt: null, // Exclude soft-deleted products by default
     };
@@ -201,8 +203,11 @@ export class ProductsService {
       where.isActive = true;
     } else if (status === 'inactive') {
       where.isActive = false;
+    } else if (status === 'all') {
+      // Explicitly show all products (both active and inactive)
+      // No additional filter needed - just non-deleted products
     }
-    // If status is 'all' or not specified, show all non-deleted products
+    // If status is not specified, show all non-deleted products
 
     // Filter by location if specified - only show products that have stock balances at this location
     if (locationId) {
@@ -213,6 +218,9 @@ export class ProductsService {
       };
     }
 
+    // Log the final where clause for debugging
+    this.logger.log(`🔍 Final where clause:`, JSON.stringify(where, null, 2));
+    
     // Optimized query with minimal data fetching for POS
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
@@ -262,6 +270,21 @@ export class ProductsService {
 
     this.logger.log(`Found ${total} total products, returning ${products.length} for page ${page}`);
     
+    // Debug: Check if there are any products at all in the database
+    if (total === 0) {
+      this.logger.warn(`⚠️ No products found with current filters. Checking if any products exist in database...`);
+      const totalProductsInDb = await this.prisma.product.count();
+      this.logger.log(`📊 Total products in database: ${totalProductsInDb}`);
+      
+      if (totalProductsInDb > 0) {
+        const sampleProducts = await this.prisma.product.findMany({
+          take: 3,
+          select: { id: true, name: true, isActive: true, deletedAt: true }
+        });
+        this.logger.log(`📋 Sample products:`, sampleProducts);
+      }
+    }
+    
     if (locationId) {
       this.logger.log(`📍 Products found for location ${locationId}: ${products.length}`);
       products.forEach(product => {
@@ -270,6 +293,36 @@ export class ProductsService {
     }
     
     return createPaginatedResponse(products, total, page, limit);
+  }
+
+  async debugProducts() {
+    this.logger.log('🔍 Debug: Checking products in database...');
+    
+    const totalProducts = await this.prisma.product.count();
+    const activeProducts = await this.prisma.product.count({ where: { isActive: true, deletedAt: null } });
+    const inactiveProducts = await this.prisma.product.count({ where: { isActive: false, deletedAt: null } });
+    const deletedProducts = await this.prisma.product.count({ where: { deletedAt: { not: null } } });
+    
+    const sampleProducts = await this.prisma.product.findMany({
+      take: 5,
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        isActive: true,
+        deletedAt: true,
+        createdAt: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    return {
+      totalProducts,
+      activeProducts,
+      inactiveProducts,
+      deletedProducts,
+      sampleProducts
+    };
   }
 
   // Optimized method specifically for POS - faster loading

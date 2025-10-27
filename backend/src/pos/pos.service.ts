@@ -54,14 +54,16 @@ export class PosService {
     const saleNumber = await this.generateSaleNumber();
 
     // Create sale in transaction
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Create sale record
+      const { discountValue, ...saleDataWithoutDiscount } = saleData;
       const sale = await tx.sale.create({
         data: {
-          ...saleData,
+          ...saleDataWithoutDiscount,
           saleNumber,
           subtotal: calculations.subtotal,
           taxAmount: calculations.taxAmount,
+          discountRate: discountValue, // Map discountValue to discountRate
           discountAmount: calculations.discountAmount,
           totalAmount: calculations.totalAmount,
           amountPaid: 0,
@@ -107,7 +109,7 @@ export class PosService {
       }
 
       // Update sale with payment info
-      const updatedSale = await tx.sale.update({
+      await tx.sale.update({
         where: { id: sale.id },
         data: {
           amountPaid: totalPaid,
@@ -117,40 +119,49 @@ export class PosService {
           status: totalPaid >= Number(sale.totalAmount) ? SaleStatus.COMPLETED : SaleStatus.DRAFT,
           completedAt: totalPaid >= Number(sale.totalAmount) ? new Date() : null,
         },
-        include: {
-          customer: true,
-          location: true,
-          creator: { select: { id: true, name: true, email: true } },
-          saleItems: {
-            include: { product: true },
-          },
-          payments: true,
-        },
       });
+
+      // Return the updated sale with minimal data to avoid transaction timeout
+      const updatedSale = {
+        id: sale.id,
+        saleNumber: sale.saleNumber,
+        status: totalPaid >= Number(sale.totalAmount) ? SaleStatus.COMPLETED : SaleStatus.DRAFT,
+        totalAmount: sale.totalAmount,
+        amountPaid: totalPaid,
+        changeGiven: Math.max(0, totalPaid - Number(sale.totalAmount)),
+      };
 
       // Update customer stats if customer provided
       if (saleData.customerId && updatedSale.status === SaleStatus.COMPLETED) {
         await this.updateCustomerStats(saleData.customerId, Number(updatedSale.totalAmount), tx);
       }
 
-      // Log audit trail
+      // Note: Audit logging moved outside transaction to prevent timeout
+
+      return { sale, updatedSale };
+    });
+
+    // Log audit trail after transaction completes to avoid timeout
+    try {
       await this.auditService.log(
         userId,
         'Sale',
-        sale.id,
+        result.sale.id,
         'CREATE',
         null,
         {
-          saleNumber: sale.saleNumber,
-          customerId: sale.customerId,
-          locationId: sale.locationId,
-          totalAmount: sale.totalAmount,
-          status: sale.status,
+          saleNumber: result.sale.saleNumber,
+          customerId: saleData.customerId,
+          locationId: saleData.locationId,
+          totalAmount: result.sale.totalAmount,
+          status: result.updatedSale.status,
         },
       );
+    } catch (auditError) {
+      console.warn(`Failed to log audit trail for sale: ${auditError.message}`);
+    }
 
-      return updatedSale;
-    });
+    return result.updatedSale;
   }
 
   async getSales(filters: SaleFiltersDto) {
@@ -195,6 +206,51 @@ export class PosService {
     ]);
 
     return createPaginatedResponse(sales, total, page, limit);
+  }
+
+  async getSalesStats(filters: SaleFiltersDto) {
+    const where: any = {};
+
+    // Apply same filters as getSales
+    if (filters.startDate || filters.endDate) {
+      where.saleDate = {};
+      if (filters.startDate) {
+        where.saleDate.gte = new Date(filters.startDate);
+      }
+      if (filters.endDate) {
+        where.saleDate.lte = new Date(filters.endDate);
+      }
+    }
+
+    if (filters.locationId) where.locationId = filters.locationId;
+    if (filters.customerId) where.customerId = filters.customerId;
+    if (filters.createdBy) where.createdBy = filters.createdBy;
+    if (filters.status) where.status = filters.status;
+    if (filters.paymentStatus) where.paymentStatus = filters.paymentStatus;
+    if (filters.saleType) where.saleType = filters.saleType;
+    if (filters.saleNumber) where.saleNumber = { contains: filters.saleNumber };
+
+    // Get aggregated statistics
+    const [totalSales, totalAmount, pendingPayments] = await Promise.all([
+      this.prisma.sale.count({ where }),
+      this.prisma.sale.aggregate({
+        where,
+        _sum: { totalAmount: true },
+      }),
+      this.prisma.sale.count({
+        where: { ...where, paymentStatus: 'PENDING' },
+      }),
+    ]);
+
+    const totalAmountValue = Number(totalAmount._sum.totalAmount || 0);
+    const averageValue = totalSales > 0 ? totalAmountValue / totalSales : 0;
+
+    return {
+      totalSales,
+      totalAmount: totalAmountValue,
+      averageValue,
+      pendingPayments,
+    };
   }
 
   async getSaleById(id: string) {
@@ -625,8 +681,9 @@ export class PosService {
   private async createStockTransactions(sale: any, items: any[], locationId: string, userId: string, tx: any) {
     for (const item of items) {
       if (item.itemType === ItemType.PRODUCT && item.productId) {
-        await this.stockTransactionsService.create(
-          {
+        // Create stock transaction directly within the existing transaction
+        await tx.stockTransaction.create({
+          data: {
             productId: item.productId,
             fromLocationId: locationId,
             type: 'ISSUE',
@@ -634,10 +691,43 @@ export class PosService {
             referenceNo: `SALE-${sale.saleNumber}`,
             remarks: `POS Sale ${sale.saleNumber}`,
             saleId: sale.id,
+            createdBy: userId,
           },
-          userId,
-        );
+        });
+
+        // Update stock balance directly
+        await this.updateStockBalanceForSale(tx, item.productId, locationId, item.quantity);
       }
+    }
+  }
+
+  private async updateStockBalanceForSale(tx: any, productId: string, locationId: string, quantity: number) {
+    // Find existing stock balance
+    const stockBalance = await tx.stockBalance.findUnique({
+      where: {
+        productId_locationId: {
+          productId,
+          locationId,
+        },
+      },
+    });
+
+    if (stockBalance) {
+      // Update existing stock balance
+      await tx.stockBalance.update({
+        where: {
+          productId_locationId: {
+            productId,
+            locationId,
+          },
+        },
+        data: {
+          quantity: stockBalance.quantity - quantity,
+        },
+      });
+    } else {
+      // Create new stock balance (shouldn't happen in normal flow)
+      console.warn(`No stock balance found for product ${productId} at location ${locationId}`);
     }
   }
 

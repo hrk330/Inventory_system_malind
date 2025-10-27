@@ -31,6 +31,13 @@ export class PosController {
     return this.posService.getSales(filters);
   }
 
+  @Get('sales-statistics')
+  @ApiOperation({ summary: 'Get sales statistics with filters' })
+  @ApiResponse({ status: 200, description: 'Sales statistics retrieved successfully' })
+  getSalesStats(@Query() filters: SaleFiltersDto) {
+    return this.posService.getSalesStats(filters);
+  }
+
   @Get('sales/:id')
   @ApiOperation({ summary: 'Get sale details by ID' })
   @ApiResponse({ status: 200, description: 'Sale details retrieved successfully' })

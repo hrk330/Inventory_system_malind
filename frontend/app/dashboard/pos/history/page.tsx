@@ -207,21 +207,125 @@ export default function SalesHistoryPage() {
       setSales(data.data || []);
       setTotalPages(data.meta?.totalPages || 1);
       
-      // Calculate summary stats
-      const totalAmount = data.data?.reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0) || 0;
-      const pendingCount = data.data?.filter((sale: Sale) => sale.paymentStatus === 'PENDING').length || 0;
+      // Calculate immediate stats from current page data as fallback
+      const currentPageSales = data.data || [];
+      const currentTotalAmount = currentPageSales.reduce((sum: number, sale: Sale) => sum + (sale.totalAmount || 0), 0);
+      const currentPendingCount = currentPageSales.filter((sale: Sale) => sale.paymentStatus === 'PENDING').length;
       
+      // Set immediate stats (will be updated by loadSummaryStats if successful)
       setSummaryStats({
-        totalSales: data.data?.length || 0,
-        totalAmount,
-        averageValue: data.data?.length > 0 ? totalAmount / data.data.length : 0,
-        pendingPayments: pendingCount,
+        totalSales: currentPageSales.length,
+        totalAmount: currentTotalAmount,
+        averageValue: currentPageSales.length > 0 ? currentTotalAmount / currentPageSales.length : 0,
+        pendingPayments: currentPendingCount,
       });
+      
+      // Load summary stats separately (all data, not just current page)
+      await loadSummaryStats();
     } catch (error) {
       toast.error('Error loading sales');
       console.error(error);
+      // Set empty stats on error
+      setSummaryStats({
+        totalSales: 0,
+        totalAmount: 0,
+        averageValue: 0,
+        pendingPayments: 0,
+      });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadSummaryStats = async () => {
+    try {
+      // First try the dedicated stats endpoint
+      const statsParams = new URLSearchParams({
+        ...(searchTerm && { saleNumber: searchTerm }),
+        ...(dateRange?.from && { startDate: dateRange.from.toISOString().split('T')[0] }),
+        ...(dateRange?.to && { endDate: dateRange.to.toISOString().split('T')[0] }),
+        ...(locationFilter && locationFilter !== 'all' && { locationId: locationFilter }),
+        ...(customerFilter && customerFilter !== 'all' && { customerId: customerFilter }),
+        ...(userFilter && userFilter !== 'all' && { createdBy: userFilter }),
+        ...(statusFilter && statusFilter !== 'all' && { status: statusFilter }),
+        ...(paymentStatusFilter && paymentStatusFilter !== 'all' && { paymentStatus: paymentStatusFilter }),
+        ...(saleTypeFilter && saleTypeFilter !== 'all' && { saleType: saleTypeFilter }),
+      });
+
+      console.log('Attempting to load stats from dedicated endpoint...');
+      const response = await apiClient.get(`/pos/sales-statistics?${statsParams}`);
+      const stats = response.data;
+      
+      console.log('Stats from dedicated endpoint:', stats);
+      
+      setSummaryStats({
+        totalSales: stats.totalSales || 0,
+        totalAmount: stats.totalAmount || 0,
+        averageValue: stats.averageValue || 0,
+        pendingPayments: stats.pendingPayments || 0,
+      });
+    } catch (error) {
+      console.error('Dedicated stats endpoint failed, using fallback method:', error);
+      
+      // Fallback: Load all sales data to calculate stats properly
+      try {
+        const allSalesParams = new URLSearchParams({
+          page: '1',
+          limit: '1000', // Get more data for accurate stats
+          ...(searchTerm && { saleNumber: searchTerm }),
+          ...(dateRange?.from && { startDate: dateRange.from.toISOString().split('T')[0] }),
+          ...(dateRange?.to && { endDate: dateRange.to.toISOString().split('T')[0] }),
+          ...(locationFilter && locationFilter !== 'all' && { locationId: locationFilter }),
+          ...(customerFilter && customerFilter !== 'all' && { customerId: customerFilter }),
+          ...(userFilter && userFilter !== 'all' && { createdBy: userFilter }),
+          ...(statusFilter && statusFilter !== 'all' && { status: statusFilter }),
+          ...(paymentStatusFilter && paymentStatusFilter !== 'all' && { paymentStatus: paymentStatusFilter }),
+          ...(saleTypeFilter && saleTypeFilter !== 'all' && { saleType: saleTypeFilter }),
+        });
+
+        console.log('Loading all sales data for stats calculation...');
+        const response = await apiClient.get(`/pos/sales?${allSalesParams}`);
+        const allSales = response.data.data || [];
+        
+        console.log('All sales data loaded:', allSales.length, 'sales');
+        console.log('Sample sale:', allSales[0]);
+        
+        const totalAmount = allSales.reduce((sum: number, sale: Sale) => sum + (sale.totalAmount || 0), 0);
+        const pendingCount = allSales.filter((sale: Sale) => sale.paymentStatus === 'PENDING').length;
+        
+        console.log('Calculated stats:', {
+          totalSales: allSales.length,
+          totalAmount,
+          averageValue: allSales.length > 0 ? totalAmount / allSales.length : 0,
+          pendingPayments: pendingCount,
+        });
+        
+        setSummaryStats({
+          totalSales: allSales.length,
+          totalAmount,
+          averageValue: allSales.length > 0 ? totalAmount / allSales.length : 0,
+          pendingPayments: pendingCount,
+        });
+      } catch (fallbackError) {
+        console.error('Fallback stats calculation failed:', fallbackError);
+        // Last resort: use current page data
+        const totalAmount = sales.reduce((sum: number, sale: Sale) => sum + (sale.totalAmount || 0), 0);
+        const pendingCount = sales.filter((sale: Sale) => sale.paymentStatus === 'PENDING').length;
+        
+        console.log('Using current page data for stats:', {
+          totalSales: sales.length,
+          totalAmount,
+          averageValue: sales.length > 0 ? totalAmount / sales.length : 0,
+          pendingPayments: pendingCount,
+        });
+        
+        setSummaryStats({
+          totalSales: sales.length,
+          totalAmount,
+          averageValue: sales.length > 0 ? totalAmount / sales.length : 0,
+          pendingPayments: pendingCount,
+        });
+      }
     }
   };
 

@@ -41,6 +41,13 @@ export class ProductsController {
     return this.productsService.findAll(paginationDto, search, category, status, locationId);
   }
 
+  @Get('debug')
+  @ApiOperation({ summary: 'Debug products - get basic product info' })
+  @ApiResponse({ status: 200, description: 'Debug info retrieved successfully' })
+  async debugProducts() {
+    return this.productsService.debugProducts();
+  }
+
   @Get('pos')
   @ApiOperation({ summary: 'Get products optimized for POS' })
   @ApiResponse({ status: 200, description: 'Products retrieved successfully for POS' })

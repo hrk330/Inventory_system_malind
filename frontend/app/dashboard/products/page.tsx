@@ -198,6 +198,13 @@ export default function ProductsPage() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalProducts, setTotalProducts] = useState(0)
+  const [paginationMode, setPaginationMode] = useState<'pages' | 'load-more'>('pages')
+  
   const queryClient = useQueryClient()
   const router = useRouter()
   const { data: session, status } = useSession()
@@ -224,6 +231,11 @@ export default function ProductsPage() {
       }
     }
   }, [searchParams])
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, categoryFilter, statusFilter])
 
   // Fetch UOMs for the form
   const { data: uomsResponse } = useQuery<UOM[] | {data: UOM[], meta: any}>({
@@ -273,10 +285,15 @@ export default function ProductsPage() {
 
   // Fetch products
   const { data: productsResponse, isLoading, error } = useQuery<Product[] | {data: Product[], meta: any}>({
-    queryKey: ['products', search, categoryFilter, statusFilter],
+    queryKey: ['products', search, categoryFilter, statusFilter, currentPage, pageSize],
     queryFn: async () => {
-      console.log('🔍 Fetching products with search:', search, 'category:', categoryFilter, 'status:', statusFilter)
+      console.log('🔍 Fetching products with search:', search, 'category:', categoryFilter, 'status:', statusFilter, 'page:', currentPage, 'limit:', pageSize)
       const params = new URLSearchParams()
+      
+      // Add pagination parameters
+      params.append('page', currentPage.toString())
+      params.append('limit', pageSize.toString())
+      
       if (search) params.append('search', search)
       if (categoryFilter && categoryFilter !== 'all') {
         if (categoryFilter === 'no-category') {
@@ -285,13 +302,24 @@ export default function ProductsPage() {
           params.append('category', categoryFilter)
         }
       }
+      // Always send status parameter to backend
       if (statusFilter && statusFilter !== 'all') {
         params.append('status', statusFilter)
+      } else {
+        // Send 'all' explicitly to ensure backend shows all products
+        params.append('status', 'all')
       }
       
       try {
         const response = await apiClient.get(`/products?${params.toString()}`)
         console.log('✅ Products fetched successfully:', response.data)
+        
+        // Update pagination info
+        if (response.data.meta) {
+          setTotalPages(response.data.meta.totalPages || 1)
+          setTotalProducts(response.data.meta.total || 0)
+        }
+        
         return response.data
       } catch (error: any) {
         console.error('❌ Error fetching products:', error)
@@ -304,6 +332,12 @@ export default function ProductsPage() {
   const products: Product[] = Array.isArray(productsResponse) 
     ? productsResponse 
     : productsResponse?.data || []
+
+  // Debug logging
+  console.log('🔍 Products response:', productsResponse)
+  console.log('📦 Extracted products:', products)
+  console.log('📊 Products count:', products.length)
+  console.log('🔍 Current filters - search:', search, 'category:', categoryFilter, 'status:', statusFilter)
 
   // Fetch categories
   const { data: categoriesResponse } = useQuery<Category[] | {data: Category[], meta: any}>({
@@ -661,8 +695,11 @@ export default function ProductsPage() {
   // Memoize filtered products to prevent unnecessary re-renders
   const filteredProducts = useMemo(() => {
     if (!products) return []
+    console.log('🔍 All products before filtering:', products.length, products)
     // Filter out category products (products that start with "Category:")
-    return products.filter(product => !product.name.startsWith('Category:'))
+    const filtered = products.filter(product => !product.name.startsWith('Category:'))
+    console.log('🔍 Products after filtering:', filtered.length, filtered)
+    return filtered
   }, [products])
 
   // Show loading while checking authentication
@@ -1070,6 +1107,150 @@ export default function ProductsPage() {
           <p className="text-gray-500">
             {search || categoryFilter !== 'all' || statusFilter !== 'all' ? 'No products found matching your search' : 'No products found'}
           </p>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {filteredProducts && filteredProducts.length > 0 && (
+        <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
+          <div className="px-4 py-3 border-b border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-300">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalProducts)} of {totalProducts} products
+                </span>
+                
+                {/* Pagination Mode Toggle */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-400">View:</span>
+                  <div className="flex bg-gray-700 rounded-md p-0.5">
+                    <button
+                      onClick={() => setPaginationMode('pages')}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        paginationMode === 'pages' 
+                          ? 'bg-green-600 text-white shadow-sm' 
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      Pages
+                    </button>
+                    <button
+                      onClick={() => setPaginationMode('load-more')}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        paginationMode === 'load-more' 
+                          ? 'bg-green-600 text-white shadow-sm' 
+                          : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      Load More
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-400">Show:</span>
+                <Select value={pageSize.toString()} onValueChange={(value) => {
+                  setPageSize(Number(value));
+                  setCurrentPage(1);
+                }}>
+                  <SelectTrigger className="w-16 h-8 text-xs bg-gray-700 border-gray-600 text-gray-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-600">
+                    <SelectItem value="10" className="text-gray-200 hover:bg-gray-700">10</SelectItem>
+                    <SelectItem value="20" className="text-gray-200 hover:bg-gray-700">20</SelectItem>
+                    <SelectItem value="50" className="text-gray-200 hover:bg-gray-700">50</SelectItem>
+                    <SelectItem value="100" className="text-gray-200 hover:bg-gray-700">100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-gray-400">per page</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="px-4 py-3">
+            {paginationMode === 'pages' ? (
+              <div className="flex items-center justify-center space-x-1">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-xs font-medium text-gray-400 border border-gray-600 rounded-md hover:bg-gray-700 hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-xs font-medium text-gray-400 border border-gray-600 rounded-md hover:bg-gray-700 hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  Previous
+                </button>
+                
+                {/* Page Numbers - Fixed Logic */}
+                {(() => {
+                  const pages = [];
+                  const maxVisible = 5;
+                  
+                  // Calculate start and end page
+                  let startPage = Math.max(1, currentPage - 2);
+                  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                  
+                  // Adjust start if we're near the end
+                  if (endPage - startPage < maxVisible - 1) {
+                    startPage = Math.max(1, endPage - maxVisible + 1);
+                  }
+                  
+                  // Generate page numbers
+                  for (let i = startPage; i <= endPage; i++) {
+                    pages.push(
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i)}
+                        className={`px-3 py-1 text-xs font-medium border rounded-md transition-colors ${
+                          currentPage === i
+                            ? 'bg-green-600 text-white border-green-600'
+                            : 'text-gray-400 border-gray-600 hover:bg-gray-700 hover:text-gray-200'
+                        }`}
+                      >
+                        {i}
+                      </button>
+                    );
+                  }
+                  
+                  return pages;
+                })()}
+                
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-xs font-medium text-gray-400 border border-gray-600 rounded-md hover:bg-gray-700 hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-xs font-medium text-gray-400 border border-gray-600 rounded-md hover:bg-gray-700 hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                >
+                  Last
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center space-x-3">
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600"
+                >
+                  Load More Products
+                </button>
+                <span className="text-sm text-gray-400">
+                  {currentPage >= totalPages ? 'All products loaded' : `${totalPages - currentPage} pages remaining`}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
