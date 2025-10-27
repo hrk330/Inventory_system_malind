@@ -147,7 +147,7 @@ export default function ReceiptPreviewModal({
                 <span className="text-gray-900">Subtotal:</span>
                 <span className="text-gray-900">${receiptTotals?.subtotal?.toFixed(2) || '0.00'}</span>
               </div>
-              {receiptTotals?.discount?.amount > 0 && (
+              {receiptTotals?.discount?.amount && receiptTotals.discount.amount > 0 && (
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-900">Discount:</span>
                   <span className="text-gray-900">-${receiptTotals.discount.amount.toFixed(2)}</span>
@@ -165,7 +165,7 @@ export default function ReceiptPreviewModal({
                 <span className="text-gray-900">Amount Paid:</span>
                 <span className="text-gray-900">${receiptTotals?.amountPaid?.toFixed(2) || '0.00'}</span>
               </div>
-              {receiptTotals?.changeGiven > 0 && (
+              {receiptTotals?.changeGiven && receiptTotals.changeGiven > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-900">Change:</span>
                   <span className="text-gray-900">${receiptTotals.changeGiven.toFixed(2)}</span>

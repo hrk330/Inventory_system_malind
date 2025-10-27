@@ -31,7 +31,7 @@ export default function ServiceForm({ onAddService }: ServiceFormProps) {
     
     onAddService({
       ...formData,
-      unitPrice: unitPrice
+      unitPrice: unitPrice.toString()
     });
     
     // Reset form

@@ -14,7 +14,7 @@ interface CartItemsProps {
   onQuantityEdit: (itemId: string, value: string) => void;
   onQuantityEditFocus: (itemId: string, value: string) => void;
   onQuantityEditBlur: (itemId: string, value: string) => void;
-  onQuantityEditKeyDown: (e: React.KeyboardEvent, itemId: string) => void;
+  onQuantityEditKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, itemId: string) => void;
   getProductStockQuantity?: (product: any) => number;
   products?: any[];
 }

@@ -5,6 +5,9 @@ export type { Customer } from '../../hooks/pos/useCustomers';
 export type { Location } from '../../hooks/pos/useLocations';
 export type { SaleData } from '../../hooks/pos/useSales';
 
+// Import Product type for use in interfaces
+import type { Product } from '../../hooks/pos/useProducts';
+
 // Additional POS-specific types
 export interface PaymentMethod {
   type: 'CASH' | 'CARD' | 'BANK_TRANSFER' | 'CHEQUE';

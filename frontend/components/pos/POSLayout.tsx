@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { useProducts } from '@/hooks/pos/useProducts';
 import { useCart } from '@/hooks/pos/useCart';
@@ -16,7 +17,8 @@ import CartItems from './CartItems';
 import OrderSummary from './OrderSummary';
 import PaymentModal from './PaymentModal';
 import ReceiptPreviewModal from './ReceiptPreviewModal';
-import { Product, CartItem } from '@/hooks/pos/useProducts';
+import { Product } from '@/hooks/pos/useProducts';
+import { CartItem } from '@/hooks/pos/useCart';
 import { BiltyFormData } from '@/types/pos';
 
 interface POSLayoutProps {
@@ -281,7 +283,7 @@ export default function POSLayout({
     }
   };
 
-  const handleQuantityEditKeyDown = (e: React.KeyboardEvent, itemId: string) => {
+  const handleQuantityEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, itemId: string) => {
     if (e.key === 'Enter') {
       e.currentTarget.blur();
     }
@@ -344,12 +346,12 @@ export default function POSLayout({
   };
 
   // Receipt actions
-  const handleDownloadReceipt = (receiptId: string) => {
-    downloadReceipt(receiptId);
+  const handleDownloadReceipt = async (receiptId: string) => {
+    await downloadReceipt(receiptId);
   };
 
-  const handlePrintReceipt = (receiptId: string) => {
-    printReceipt(receiptId);
+  const handlePrintReceipt = async (receiptId: string) => {
+    await printReceipt(receiptId);
   };
 
   const handleGenerateReceipt = async (saleId: string) => {
