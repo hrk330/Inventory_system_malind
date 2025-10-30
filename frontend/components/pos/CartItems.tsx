@@ -38,10 +38,11 @@ export default function CartItems({
           <tr className="border-b-2 border-gray-300 bg-gray-50">
             <th className="text-left py-2 px-2 text-xs text-gray-900 font-semibold border-r border-gray-200">Item Name</th>
             <th className="text-center py-2 px-2 text-xs text-gray-900 font-semibold border-r border-gray-200">QTY</th>
-            <th className="text-right py-2 px-2 text-xs text-gray-900 font-semibold border-r border-gray-200">Retail</th>
             <th className="text-right py-2 px-2 text-xs text-gray-900 font-semibold border-r border-gray-200">Discount</th>
             <th className="text-right py-2 px-2 text-xs text-gray-900 font-semibold border-r border-gray-200">Unit Price</th>
-            <th className="text-right py-2 px-2 text-xs text-gray-900 font-semibold border-r border-gray-200">Total Price</th>
+            <th className="text-right py-2 px-2 text-xs text-gray-900 font-semibold border-r border-gray-200">Subtotal</th>
+            <th className="text-right py-2 px-2 text-xs text-gray-900 font-semibold border-r border-gray-200">Tax</th>
+            <th className="text-right py-2 px-2 text-xs text-gray-900 font-semibold border-r border-gray-200">Total</th>
             <th className="text-center py-2 px-2 text-xs text-gray-900 font-semibold">Action</th>
           </tr>
         </thead>
@@ -105,9 +106,10 @@ export default function CartItems({
                   </Button>
                 </div>
               </td>
-              <td className="py-2 px-2 text-right text-xs text-gray-900 border-r border-gray-200">${item.unitPrice.toFixed(2)}</td>
               <td className="py-2 px-2 text-right text-xs text-gray-900 border-r border-gray-200">${item.itemDiscountAmount.toFixed(2)}</td>
               <td className="py-2 px-2 text-right text-xs text-gray-900 border-r border-gray-200">${item.unitPrice.toFixed(2)}</td>
+              <td className="py-2 px-2 text-right text-xs text-gray-900 border-r border-gray-200">${item.lineSubtotal.toFixed(2)}</td>
+              <td className="py-2 px-2 text-right text-xs text-gray-900 border-r border-gray-200">${item.itemTaxAmount.toFixed(2)}</td>
               <td className="py-2 px-2 text-right text-xs text-gray-900 border-r border-gray-200 font-semibold">${item.lineTotal.toFixed(2)}</td>
               <td className="py-2 px-2 text-center">
                 <Button

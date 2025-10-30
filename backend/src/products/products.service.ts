@@ -62,6 +62,16 @@ export class ProductsService {
       }
     }
 
+    // Validate company if provided
+    const inputAsAny: any = createProductDto as any;
+    if (inputAsAny.companyId) {
+      const company = await this.prisma.company.findUnique({ where: { id: inputAsAny.companyId } });
+      if (!company) {
+        this.logger.warn(`Company not found: ${inputAsAny.companyId}`);
+        throw new BadRequestException('Invalid company ID provided');
+      }
+    }
+
     // Validate barcode uniqueness if provided and not empty
     if (createProductDto.barcode && createProductDto.barcode.trim() !== '') {
       const existingProduct = await this.prisma.product.findFirst({
@@ -79,6 +89,7 @@ export class ProductsService {
       name: createProductDto.name,
       sku: createProductDto.sku,
       categoryId: createProductDto.categoryId || null,
+      companyId: (createProductDto as any).companyId || null,
       uomId: createProductDto.uomId,
       reorderLevel: createProductDto.reorderLevel,
       description: createProductDto.description || null,
@@ -102,6 +113,9 @@ export class ProductsService {
             name: true,
             symbol: true
           }
+        },
+        company: {
+          select: { id: true, name: true }
         },
         category: {
           select: {
@@ -150,12 +164,13 @@ export class ProductsService {
     search?: string,
     category?: string,
     status?: string,
-    locationId?: string
+    locationId?: string,
+    companyId?: string
   ) {
     const { page = 1, limit = 10 } = paginationDto;
     const { skip, take } = getPaginationParams(page, limit);
     
-    this.logger.log(`Fetching products - search: ${search || 'none'}, category: ${category || 'all'}, status: ${status || 'all'}, location: ${locationId || 'all'}`);
+    this.logger.log(`Fetching products - search: ${search || 'none'}, category: ${category || 'all'}, status: ${status || 'all'}, location: ${locationId || 'all'}, company: ${companyId || 'all'}`);
     
     if (locationId) {
       this.logger.log(`🔍 Filtering products for location: ${locationId}`);
@@ -218,6 +233,10 @@ export class ProductsService {
       };
     }
 
+    if (companyId) {
+      where.companyId = companyId;
+    }
+
     // Log the final where clause for debugging
     this.logger.log(`🔍 Final where clause:`, JSON.stringify(where, null, 2));
     
@@ -234,6 +253,9 @@ export class ProductsService {
           costPrice: true,
           isActive: true,
           createdAt: true,
+          company: {
+            select: { id: true, name: true }
+          },
           uom: {
             select: {
               id: true,
@@ -404,6 +426,9 @@ export class ProductsService {
             symbol: true
           }
         },
+        company: {
+          select: { id: true, name: true }
+        },
         category: {
           select: {
             id: true,
@@ -480,8 +505,8 @@ export class ProductsService {
       }
     }
 
-    // Prepare update data, handling uomId, supplierId, and categoryId properly
-    const { uomId, supplierId, categoryId, ...updateData } = updateProductDto;
+    // Prepare update data, handling uomId, supplierId, categoryId, companyId properly
+    const { uomId, supplierId, categoryId, companyId, ...updateData } = updateProductDto as any;
     
     const updatePayload: any = { ...updateData };
     
@@ -521,6 +546,17 @@ export class ProductsService {
       };
     }
 
+    // Handle Company relation update
+    if (companyId) {
+      updatePayload.company = {
+        connect: { id: companyId }
+      };
+    } else if (companyId === null || companyId === '') {
+      updatePayload.company = {
+        disconnect: true
+      };
+    }
+
     const updatedProduct = await this.prisma.product.update({
       where: { id },
       data: updatePayload,
@@ -531,6 +567,9 @@ export class ProductsService {
             name: true,
             symbol: true
           }
+        },
+        company: {
+          select: { id: true, name: true }
         },
         category: {
           select: {

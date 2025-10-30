@@ -43,4 +43,9 @@ export class ProductsQueryDto {
   @IsOptional()
   @IsString()
   locationId?: string;
+
+  @ApiProperty({ required: false, description: 'Filter by company ID' })
+  @IsOptional()
+  @IsString()
+  companyId?: string;
 }

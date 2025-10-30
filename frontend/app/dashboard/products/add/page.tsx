@@ -20,6 +20,7 @@ interface ProductFormData {
   name: string
   sku: string
   categoryId?: string
+  companyId?: string
   uomId: string
   reorderLevel: number
   description?: string
@@ -54,6 +55,12 @@ interface Category {
   isActive: boolean
   createdAt: string
   updatedAt: string
+}
+
+interface Company {
+  id: string
+  name: string
+  code?: string
 }
 
 interface UOM {
@@ -131,6 +138,16 @@ export default function AddProductPage() {
   const suppliers: Supplier[] = Array.isArray(suppliersResponse) 
     ? suppliersResponse 
     : suppliersResponse?.data || []
+
+  // Fetch companies
+  const { data: companiesResponse } = useQuery<{data: Company[]}>({
+    queryKey: ['companies'],
+    queryFn: async () => {
+      const res = await apiClient.get('/companies?limit=100')
+      return res.data
+    }
+  })
+  const companies: Company[] = companiesResponse?.data || []
 
   // Create product mutation
   const createMutation = useMutation({
@@ -220,6 +237,7 @@ export default function AddProductPage() {
       name: '',
       sku: '',
       categoryId: undefined,
+      companyId: undefined,
       uomId: 'uom-pcs',
       reorderLevel: 0,
       description: undefined,
@@ -443,6 +461,24 @@ export default function AddProductPage() {
                     </Button>
                   )}
                 </div>
+              </div>
+
+              {/* Company */}
+              <div>
+                <Label htmlFor="company">Company</Label>
+                <Select onValueChange={(value) => setValue('companyId', value === 'no-company' ? '' : value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-company">No Company</SelectItem>
+                    {companies?.map((company: Company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Description */}

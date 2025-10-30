@@ -37,6 +37,14 @@ export class CustomersController {
     return this.customersService.searchCustomers(query);
   }
 
+  @Get('ledger-overview')
+  @ApiOperation({ summary: 'Get all customers with their ledger summaries' })
+  @ApiQuery({ name: 'search', description: 'Search customers by name, email, or phone', required: false })
+  @ApiResponse({ status: 200, description: 'Customer ledger overview retrieved successfully' })
+  getLedgerOverview(@Query('search') search?: string) {
+    return this.customersService.getLedgerOverview(search);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get customer by ID with purchase history' })
   @ApiResponse({ status: 200, description: 'Customer retrieved successfully' })

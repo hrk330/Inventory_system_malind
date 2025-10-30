@@ -16,6 +16,11 @@ export class CreateProductDto {
   @IsString()
   categoryId?: string;
 
+  @ApiProperty({ example: 'company-uuid', required: false })
+  @IsOptional()
+  @IsString()
+  companyId?: string;
+
   @ApiProperty({ example: 'uom-pcs' })
   @IsString()
   uomId: string;

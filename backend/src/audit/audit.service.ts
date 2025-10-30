@@ -72,7 +72,7 @@ export class AuditService {
     userId: string,
     entityName: string,
     entityId: string,
-    action: 'CREATE' | 'UPDATE' | 'DELETE',
+    action: 'CREATE' | 'UPDATE' | 'DELETE' | 'UPDATE_PAYMENT' | 'MARK_RECEIVED' | 'CREATE_RETURN',
     oldValue?: any,
     newValue?: any,
   ) {

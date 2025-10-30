@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { apiClient } from '@/lib/api-client'
-import { Package, MapPin, AlertTriangle, TrendingUp, Activity, Users, BarChart3, Zap } from 'lucide-react'
+import { Package, MapPin, AlertTriangle, TrendingUp, Activity, Users, BarChart3, Zap, DollarSign } from 'lucide-react'
 
 export default function DashboardPage() {
   const { data: products, isLoading: productsLoading, error: productsError } = useQuery({
@@ -36,10 +36,20 @@ export default function DashboardPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
+  const { data: purchases, isLoading: purchasesLoading, error: purchasesError } = useQuery({
+    queryKey: ['purchases', 'dashboard'],
+    queryFn: () => apiClient.get('/purchases?limit=100').then(res => res.data),
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
   const totalProducts = products?.data?.length || products?.length || 0
   const totalLocations = locations?.data?.length || locations?.length || 0
   const totalStockValue = Array.isArray(stockBalances?.data) ? stockBalances.data.reduce((sum: number, balance: any) => sum + balance.quantity, 0) : Array.isArray(stockBalances) ? stockBalances.reduce((sum: number, balance: any) => sum + balance.quantity, 0) : 0
   const totalAlerts = reorderAlerts?.length || 0
+  const totalPurchases = purchases?.data?.length || 0
+  const pendingPurchases = Array.isArray(purchases?.data) ? purchases.data.filter((p: any) => p.status === 'PENDING').length : 0
+  const totalPurchaseValue = Array.isArray(purchases?.data) ? purchases.data.reduce((sum: number, purchase: any) => sum + Number(purchase.totalAmount || 0), 0) : 0
 
   const stats = [
     {
@@ -78,10 +88,37 @@ export default function DashboardPage() {
       borderColor: 'border-red-400/30',
       gradient: 'from-red-500/20 to-red-600/20',
     },
+    {
+      name: 'Purchase Orders',
+      value: totalPurchases,
+      icon: Package,
+      color: 'text-orange-400',
+      bgColor: 'bg-orange-500/20',
+      borderColor: 'border-orange-400/30',
+      gradient: 'from-orange-500/20 to-orange-600/20',
+    },
+    {
+      name: 'Pending Orders',
+      value: pendingPurchases,
+      icon: AlertTriangle,
+      color: 'text-yellow-400',
+      bgColor: 'bg-yellow-500/20',
+      borderColor: 'border-yellow-400/30',
+      gradient: 'from-yellow-500/20 to-yellow-600/20',
+    },
+    {
+      name: 'Purchase Value',
+      value: `$${totalPurchaseValue.toFixed(2)}`,
+      icon: DollarSign,
+      color: 'text-emerald-400',
+      bgColor: 'bg-emerald-500/20',
+      borderColor: 'border-emerald-400/30',
+      gradient: 'from-emerald-500/20 to-emerald-600/20',
+    },
   ]
 
   // Handle errors
-  if (productsError || locationsError || balancesError || alertsError) {
+  if (productsError || locationsError || balancesError || alertsError || purchasesError) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center glass-card p-8">
@@ -98,7 +135,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (productsLoading || locationsLoading || balancesLoading || alertsLoading) {
+  if (productsLoading || locationsLoading || balancesLoading || alertsLoading || purchasesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="relative">

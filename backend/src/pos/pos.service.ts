@@ -50,16 +50,19 @@ export class PosService {
       saleData.discountValue || 0,
     );
 
-    // Generate sale number
-    const saleNumber = await this.generateSaleNumber();
+    // Create sale in transaction with retry for unique constraint on saleNumber
+    let lastError: any;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      // Generate sale number per attempt
+      const saleNumber = await this.generateSaleNumber();
 
-    // Create sale in transaction
-    const result = await this.prisma.$transaction(async (tx) => {
-      // Create sale record
-      const { discountValue, ...saleDataWithoutDiscount } = saleData;
+      try {
+        const result = await this.prisma.$transaction(async (tx) => {
+      // Create sale record - filter out non-database fields
+      const { discountValue, isCreditSale: creditSaleFlag, amountPaid: paidAmount, totalAmount: saleTotal, ...saleDataWithoutExtra } = saleData;
       const sale = await tx.sale.create({
         data: {
-          ...saleDataWithoutDiscount,
+          ...saleDataWithoutExtra,
           saleNumber,
           subtotal: calculations.subtotal,
           taxAmount: calculations.taxAmount,
@@ -108,60 +111,125 @@ export class PosService {
         totalPaid = paymentRecords.reduce((sum, payment) => sum + Number(payment.amount), 0);
       }
 
+      // Determine sale status based on payment and credit sale flag
+      const isCreditSale = creditSaleFlag || false;
+      const isFullyPaid = totalPaid >= Number(sale.totalAmount);
+      const isPartiallyPaid = totalPaid > 0 && totalPaid < Number(sale.totalAmount);
+      
+      let finalStatus: SaleStatus;
+      let finalPaymentStatus: PaymentStatus;
+      
+      if (isCreditSale) {
+        // Credit sale - customer will pay later
+        finalStatus = SaleStatus.CREDIT;
+        finalPaymentStatus = isFullyPaid ? PaymentStatus.PAID : 
+                           isPartiallyPaid ? PaymentStatus.PARTIAL : PaymentStatus.PENDING;
+      } else if (isFullyPaid) {
+        // Fully paid
+        finalStatus = SaleStatus.COMPLETED;
+        finalPaymentStatus = PaymentStatus.PAID;
+      } else if (isPartiallyPaid) {
+        // Partially paid
+        finalStatus = SaleStatus.PARTIAL;
+        finalPaymentStatus = PaymentStatus.PARTIAL;
+      } else {
+        // No payment
+        finalStatus = SaleStatus.DRAFT;
+        finalPaymentStatus = PaymentStatus.PENDING;
+      }
+
+      // Calculate amount paid (capped at total amount to prevent change from affecting customer balance)
+      const actualAmountPaid = Math.min(totalPaid, Number(sale.totalAmount));
+      const changeGiven = Math.max(0, totalPaid - Number(sale.totalAmount));
+
       // Update sale with payment info
-      await tx.sale.update({
+      const updatedSale = await tx.sale.update({
         where: { id: sale.id },
         data: {
-          amountPaid: totalPaid,
-          changeGiven: Math.max(0, totalPaid - Number(sale.totalAmount)),
-          paymentStatus: totalPaid >= Number(sale.totalAmount) ? PaymentStatus.PAID : 
-                        totalPaid > 0 ? PaymentStatus.PARTIAL : PaymentStatus.PENDING,
-          status: totalPaid >= Number(sale.totalAmount) ? SaleStatus.COMPLETED : SaleStatus.DRAFT,
-          completedAt: totalPaid >= Number(sale.totalAmount) ? new Date() : null,
+          amountPaid: actualAmountPaid, // Cap at total amount - change doesn't affect customer balance
+          changeGiven: changeGiven,
+          paymentStatus: finalPaymentStatus,
+          status: finalStatus,
+          completedAt: (finalStatus === SaleStatus.COMPLETED || finalStatus === SaleStatus.CREDIT) ? new Date() : null,
         },
       });
 
-      // Return the updated sale with minimal data to avoid transaction timeout
-      const updatedSale = {
-        id: sale.id,
-        saleNumber: sale.saleNumber,
-        status: totalPaid >= Number(sale.totalAmount) ? SaleStatus.COMPLETED : SaleStatus.DRAFT,
-        totalAmount: sale.totalAmount,
-        amountPaid: totalPaid,
-        changeGiven: Math.max(0, totalPaid - Number(sale.totalAmount)),
-      };
+      // Note: Customer balance update moved outside transaction to prevent timeout
 
-      // Update customer stats if customer provided
-      if (saleData.customerId && updatedSale.status === SaleStatus.COMPLETED) {
-        await this.updateCustomerStats(saleData.customerId, Number(updatedSale.totalAmount), tx);
+          return { sale, updatedSale, finalStatus, totalPaid, actualAmountPaid };
+        });
+
+        // Success: proceed with post-transaction updates and return
+        // Update customer balance after transaction completes to avoid timeout
+        if (saleData.customerId) {
+          try {
+            const remainingBalance = Number(result.updatedSale.totalAmount) - result.actualAmountPaid;
+            
+            if (remainingBalance > 0) {
+              await this.prisma.customer.update({
+                where: { id: saleData.customerId },
+                data: {
+                  balance: { increment: remainingBalance },
+                  totalPurchases: { increment: Number(result.updatedSale.totalAmount) },
+                  lastPurchaseDate: new Date()
+                }
+              });
+            } else if (remainingBalance < 0) {
+              await this.prisma.customer.update({
+                where: { id: saleData.customerId },
+                data: {
+                  balance: { increment: remainingBalance },
+                  totalPurchases: { increment: Number(result.updatedSale.totalAmount) },
+                  lastPurchaseDate: new Date()
+                }
+              });
+            } else {
+              await this.prisma.customer.update({
+                where: { id: saleData.customerId },
+                data: {
+                  totalPurchases: { increment: Number(result.updatedSale.totalAmount) },
+                  lastPurchaseDate: new Date()
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error updating customer balance:', error);
+            // Don't fail the sale if customer balance update fails
+          }
+        }
+
+        // Log audit trail after transaction completes to avoid timeout
+        try {
+          await this.auditService.log(
+            userId,
+            'Sale',
+            result.sale.id,
+            'CREATE',
+            null,
+            {
+              saleNumber: result.sale.saleNumber,
+              customerId: saleData.customerId,
+              locationId: saleData.locationId,
+              totalAmount: result.sale.totalAmount,
+              status: result.updatedSale.status,
+            },
+          );
+        } catch (auditError) {
+          console.warn(`Failed to log audit trail for sale: ${auditError.message}`);
+        }
+
+        return result.updatedSale;
+      } catch (e: any) {
+        lastError = e;
+        // Retry on unique constraint violation for saleNumber
+        if (e && e.code === 'P2002') {
+          continue;
+        }
+        throw e;
       }
-
-      // Note: Audit logging moved outside transaction to prevent timeout
-
-      return { sale, updatedSale };
-    });
-
-    // Log audit trail after transaction completes to avoid timeout
-    try {
-      await this.auditService.log(
-        userId,
-        'Sale',
-        result.sale.id,
-        'CREATE',
-        null,
-        {
-          saleNumber: result.sale.saleNumber,
-          customerId: saleData.customerId,
-          locationId: saleData.locationId,
-          totalAmount: result.sale.totalAmount,
-          status: result.updatedSale.status,
-        },
-      );
-    } catch (auditError) {
-      console.warn(`Failed to log audit trail for sale: ${auditError.message}`);
     }
-
-    return result.updatedSale;
+    // If we exhaust retries
+    throw lastError;
   }
 
   async getSales(filters: SaleFiltersDto) {
@@ -184,7 +252,15 @@ export class PosService {
     if (filterParams.locationId) where.locationId = filterParams.locationId;
     if (filterParams.customerId) where.customerId = filterParams.customerId;
     if (filterParams.createdBy) where.createdBy = filterParams.createdBy;
-    if (filterParams.status) where.status = filterParams.status;
+    
+    // Handle single status or multiple statuses
+    if (filterParams.status) {
+      where.status = filterParams.status;
+    } else if (filterParams.statuses) {
+      const statusArray = filterParams.statuses.split(',').map(s => s.trim());
+      where.status = { in: statusArray };
+    }
+    
     if (filterParams.paymentStatus) where.paymentStatus = filterParams.paymentStatus;
     if (filterParams.saleType) where.saleType = filterParams.saleType;
     if (filterParams.saleNumber) where.saleNumber = { contains: filterParams.saleNumber };
@@ -196,9 +272,20 @@ export class PosService {
         take: limit,
         orderBy: { saleDate: 'desc' },
         include: {
-          customer: { select: { id: true, name: true, email: true } },
+          customer: { select: { id: true, name: true, email: true, balance: true } },
           location: { select: { id: true, name: true } },
           creator: { select: { id: true, name: true, email: true } },
+          payments: {
+            select: {
+              id: true,
+              amount: true,
+              paymentMethod: true,
+              referenceNumber: true,
+              paymentDate: true,
+              notes: true,
+            },
+            orderBy: { paymentDate: 'desc' }
+          },
           _count: { select: { saleItems: true, payments: true } },
         },
       }),
@@ -334,7 +421,7 @@ export class PosService {
   async addPayment(saleId: string, addPaymentDto: AddPaymentDto, userId: string) {
     const sale = await this.getSaleById(saleId);
 
-    if (sale.status !== SaleStatus.DRAFT && sale.status !== SaleStatus.COMPLETED) {
+    if (sale.status === SaleStatus.CANCELLED || sale.status === SaleStatus.REFUNDED) {
       throw new BadRequestException('Cannot add payment to cancelled or refunded sale');
     }
 
@@ -348,22 +435,57 @@ export class PosService {
         },
       });
 
+      // Create customer payment record for ledger tracking
+      if (sale.customerId) {
+        await tx.customerPayment.create({
+          data: {
+            saleId,
+            amount: addPaymentDto.amount,
+            paymentMethod: addPaymentDto.paymentMethod,
+            referenceNumber: addPaymentDto.referenceNumber,
+            notes: addPaymentDto.notes,
+            processedBy: userId,
+          },
+        });
+      }
+
       // Calculate new totals
       const allPayments = await tx.payment.findMany({
         where: { saleId },
       });
       const totalPaid = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
+      // Determine new sale status
+      const isFullyPaid = totalPaid >= Number(sale.totalAmount);
+      const isPartiallyPaid = totalPaid > 0 && totalPaid < Number(sale.totalAmount);
+      
+      let newStatus: SaleStatus;
+      let newPaymentStatus: PaymentStatus;
+      
+      if (isFullyPaid) {
+        newStatus = SaleStatus.COMPLETED;
+        newPaymentStatus = PaymentStatus.PAID;
+      } else if (isPartiallyPaid) {
+        newStatus = SaleStatus.PARTIAL;
+        newPaymentStatus = PaymentStatus.PARTIAL;
+      } else {
+        newStatus = sale.status;
+        newPaymentStatus = PaymentStatus.PENDING;
+      }
+
+      // Calculate amount paid (capped at total amount to prevent change from affecting customer balance)
+      const actualAmountPaid = Math.min(totalPaid, Number(sale.totalAmount));
+      const changeGiven = Math.max(0, totalPaid - Number(sale.totalAmount));
+
       // Update sale
       const updatedSale = await tx.sale.update({
         where: { id: saleId },
         data: {
-          amountPaid: totalPaid,
-          changeGiven: Math.max(0, totalPaid - Number(sale.totalAmount)),
-          paymentStatus: totalPaid >= Number(sale.totalAmount) ? PaymentStatus.PAID : 
-                        totalPaid > 0 ? PaymentStatus.PARTIAL : PaymentStatus.PENDING,
-          status: totalPaid >= Number(sale.totalAmount) ? SaleStatus.COMPLETED : sale.status,
-          completedAt: totalPaid >= Number(sale.totalAmount) ? new Date() : sale.completedAt,
+          amountPaid: actualAmountPaid, // Cap at total amount - change doesn't affect customer balance
+          changeGiven: changeGiven,
+          paymentStatus: newPaymentStatus,
+          status: newStatus,
+          completedAt: isFullyPaid ? new Date() : sale.completedAt,
         },
         include: {
           customer: true,
@@ -374,9 +496,29 @@ export class PosService {
         },
       });
 
-      // Update customer stats if fully paid
-      if (updatedSale.status === SaleStatus.COMPLETED && sale.customerId) {
-        await this.updateCustomerStats(sale.customerId, Number(sale.totalAmount), tx);
+      // Update customer balance
+      if (sale.customerId) {
+        const previousAmountPaid = Number(sale.amountPaid);
+        const paymentAmount = Number(addPaymentDto.amount);
+        
+        // Calculate the effective payment amount (capped at remaining balance)
+        const remainingBalance = Number(sale.totalAmount) - previousAmountPaid;
+        const effectivePaymentAmount = Math.min(paymentAmount, remainingBalance);
+        
+        // Reduce customer balance by the effective payment amount only
+        await tx.customer.update({
+          where: { id: sale.customerId },
+          data: {
+            balance: {
+              decrement: effectivePaymentAmount
+            }
+          }
+        });
+
+        // Update customer stats if fully paid
+        if (isFullyPaid && sale.status !== SaleStatus.COMPLETED) {
+          await this.updateCustomerStats(sale.customerId, Number(sale.totalAmount), tx);
+        }
       }
 
       // Log audit trail
@@ -764,8 +906,10 @@ export class PosService {
 
   private validateStatusTransition(currentStatus: SaleStatus, newStatus: SaleStatus) {
     const validTransitions: Record<SaleStatus, SaleStatus[]> = {
-      [SaleStatus.DRAFT]: [SaleStatus.COMPLETED, SaleStatus.CANCELLED],
+      [SaleStatus.DRAFT]: [SaleStatus.COMPLETED, SaleStatus.PARTIAL, SaleStatus.CREDIT, SaleStatus.CANCELLED],
       [SaleStatus.COMPLETED]: [SaleStatus.CANCELLED, SaleStatus.REFUNDED],
+      [SaleStatus.PARTIAL]: [SaleStatus.COMPLETED, SaleStatus.CANCELLED],
+      [SaleStatus.CREDIT]: [SaleStatus.COMPLETED, SaleStatus.CANCELLED],
       [SaleStatus.CANCELLED]: [],
       [SaleStatus.REFUNDED]: [],
     };

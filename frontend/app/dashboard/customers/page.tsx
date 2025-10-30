@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Plus, Search, Edit, Trash2, Eye, Users, Mail, Phone, MapPin, Star, Calendar, DollarSign } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, Users, Mail, Phone, MapPin, Star, Calendar, DollarSign, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -498,13 +498,24 @@ export default function CustomersPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => openDetailsDialog(customer)}
+                            title="View Details"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => window.open(`/dashboard/customers/ledger?customerId=${customer.id}`, '_blank')}
+                            title="View Ledger"
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => openEditDialog(customer)}
+                            title="Edit Customer"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -513,6 +524,7 @@ export default function CustomersPage() {
                             size="sm"
                             onClick={() => handleDeleteCustomer(customer.id)}
                             className="text-red-600 hover:text-red-700"
+                            title="Delete Customer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

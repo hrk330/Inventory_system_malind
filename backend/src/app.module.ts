@@ -18,8 +18,11 @@ import { ProductVariantsModule } from './product-variants/product-variants.modul
 import { UOMsModule } from './uoms/uoms.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CustomersModule } from './customers/customers.module';
+import { CustomerLedgerModule } from './customers/ledger.module';
 import { PosModule } from './pos/pos.module';
 import { ReceiptsModule } from './receipts/receipts.module';
+import { PurchaseModule } from './purchases/purchase.module';
+import { CompaniesModule } from './companies/companies.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 @Module({
@@ -47,8 +50,11 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     UOMsModule,
     CategoriesModule,
     CustomersModule,
+    CustomerLedgerModule,
     PosModule,
     ReceiptsModule,
+    PurchaseModule,
+    CompaniesModule,
   ],
   providers: [
     {

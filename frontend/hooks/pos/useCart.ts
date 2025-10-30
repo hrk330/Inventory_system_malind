@@ -22,9 +22,10 @@ export interface Discount {
   amount: number;
 }
 
-export const useCart = (taxRate: number = 15.0) => {
+export const useCart = (initialTaxRate: number = 15.0) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState<Discount>({ type: 'PERCENTAGE', value: 0, amount: 0 });
+  const [taxRate, setTaxRate] = useState<number>(initialTaxRate);
 
   // Calculations
   const subtotal = cartItems.reduce((sum, item) => sum + (item.lineSubtotal || 0), 0);
@@ -154,6 +155,8 @@ export const useCart = (taxRate: number = 15.0) => {
     saleDiscount,
     subtotalAfterDiscount,
     taxAmount,
+    taxRate,
+    setTaxRate,
     totalAmount,
     addToCart,
     updateQuantity,

@@ -36,9 +36,9 @@ export class ProductsController {
   @ApiOperation({ summary: 'Get all products' })
   @ApiResponse({ status: 200, description: 'Products retrieved successfully' })
   findAll(@Query() queryDto: ProductsQueryDto) {
-    const { page, limit, search, category, status, locationId } = queryDto;
+    const { page, limit, search, category, status, locationId, companyId } = queryDto;
     const paginationDto = { page, limit };
-    return this.productsService.findAll(paginationDto, search, category, status, locationId);
+    return this.productsService.findAll(paginationDto, search, category, status, locationId, companyId);
   }
 
   @Get('debug')

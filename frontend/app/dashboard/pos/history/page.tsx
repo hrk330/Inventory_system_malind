@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { Search, Filter, Download, Eye, Receipt, RefreshCw, Calendar, User, MapPin, CreditCard, DollarSign, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -177,6 +177,7 @@ export default function SalesHistoryPage() {
     averageValue: 0,
     pendingPayments: 0,
   });
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
 
   useEffect(() => {
     loadSales();
@@ -184,9 +185,16 @@ export default function SalesHistoryPage() {
     loadUsers();
   }, [currentPage, searchTerm, dateRange, locationFilter, customerFilter, userFilter, statusFilter, paymentStatusFilter, saleTypeFilter]);
 
+  // Initialize stats loading state on component mount
+  useEffect(() => {
+    setIsStatsLoading(true);
+  }, []);
+
   const loadSales = async () => {
     try {
       setIsLoading(true);
+      setIsStatsLoading(true);
+      
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '20',
@@ -207,19 +215,6 @@ export default function SalesHistoryPage() {
       setSales(data.data || []);
       setTotalPages(data.meta?.totalPages || 1);
       
-      // Calculate immediate stats from current page data as fallback
-      const currentPageSales = data.data || [];
-      const currentTotalAmount = currentPageSales.reduce((sum: number, sale: Sale) => sum + (sale.totalAmount || 0), 0);
-      const currentPendingCount = currentPageSales.filter((sale: Sale) => sale.paymentStatus === 'PENDING').length;
-      
-      // Set immediate stats (will be updated by loadSummaryStats if successful)
-      setSummaryStats({
-        totalSales: currentPageSales.length,
-        totalAmount: currentTotalAmount,
-        averageValue: currentPageSales.length > 0 ? currentTotalAmount / currentPageSales.length : 0,
-        pendingPayments: currentPendingCount,
-      });
-      
       // Load summary stats separately (all data, not just current page)
       await loadSummaryStats();
     } catch (error) {
@@ -232,6 +227,7 @@ export default function SalesHistoryPage() {
         averageValue: 0,
         pendingPayments: 0,
       });
+      setIsStatsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -252,11 +248,8 @@ export default function SalesHistoryPage() {
         ...(saleTypeFilter && saleTypeFilter !== 'all' && { saleType: saleTypeFilter }),
       });
 
-      console.log('Attempting to load stats from dedicated endpoint...');
       const response = await apiClient.get(`/pos/sales-statistics?${statsParams}`);
       const stats = response.data;
-      
-      console.log('Stats from dedicated endpoint:', stats);
       
       setSummaryStats({
         totalSales: stats.totalSales || 0,
@@ -283,22 +276,11 @@ export default function SalesHistoryPage() {
           ...(saleTypeFilter && saleTypeFilter !== 'all' && { saleType: saleTypeFilter }),
         });
 
-        console.log('Loading all sales data for stats calculation...');
         const response = await apiClient.get(`/pos/sales?${allSalesParams}`);
         const allSales = response.data.data || [];
         
-        console.log('All sales data loaded:', allSales.length, 'sales');
-        console.log('Sample sale:', allSales[0]);
-        
         const totalAmount = allSales.reduce((sum: number, sale: Sale) => sum + (sale.totalAmount || 0), 0);
         const pendingCount = allSales.filter((sale: Sale) => sale.paymentStatus === 'PENDING').length;
-        
-        console.log('Calculated stats:', {
-          totalSales: allSales.length,
-          totalAmount,
-          averageValue: allSales.length > 0 ? totalAmount / allSales.length : 0,
-          pendingPayments: pendingCount,
-        });
         
         setSummaryStats({
           totalSales: allSales.length,
@@ -312,13 +294,6 @@ export default function SalesHistoryPage() {
         const totalAmount = sales.reduce((sum: number, sale: Sale) => sum + (sale.totalAmount || 0), 0);
         const pendingCount = sales.filter((sale: Sale) => sale.paymentStatus === 'PENDING').length;
         
-        console.log('Using current page data for stats:', {
-          totalSales: sales.length,
-          totalAmount,
-          averageValue: sales.length > 0 ? totalAmount / sales.length : 0,
-          pendingPayments: pendingCount,
-        });
-        
         setSummaryStats({
           totalSales: sales.length,
           totalAmount,
@@ -326,6 +301,8 @@ export default function SalesHistoryPage() {
           pendingPayments: pendingCount,
         });
       }
+    } finally {
+      setIsStatsLoading(false);
     }
   };
 
@@ -461,6 +438,19 @@ export default function SalesHistoryPage() {
     return new Date(dateString).toLocaleString();
   };
 
+  // Memoized stats calculation to prevent unnecessary re-renders
+  const memoizedStats = useMemo(() => {
+    if (isStatsLoading) {
+      return {
+        totalSales: 0,
+        totalAmount: 0,
+        averageValue: 0,
+        pendingPayments: 0,
+      };
+    }
+    return summaryStats;
+  }, [summaryStats, isStatsLoading]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -470,6 +460,14 @@ export default function SalesHistoryPage() {
           <p className="text-gray-300">View and manage all sales transactions</p>
         </div>
         <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => window.open('/dashboard/pos/credit-sales', '_blank')}
+            className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600"
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Manage Credit Sales
+          </Button>
           <Button variant="outline" onClick={loadSales}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -489,7 +487,11 @@ export default function SalesHistoryPage() {
               <ShoppingCart className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm font-medium">Total Sales</p>
-                <p className="text-2xl font-bold">{summaryStats.totalSales}</p>
+                {isStatsLoading ? (
+                  <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
+                ) : (
+                  <p className="text-2xl font-bold">{memoizedStats.totalSales}</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -501,7 +503,11 @@ export default function SalesHistoryPage() {
               <DollarSign className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm font-medium">Total Amount</p>
-                <p className="text-2xl font-bold">{formatCurrency(summaryStats.totalAmount)}</p>
+                {isStatsLoading ? (
+                  <div className="animate-pulse bg-gray-200 h-8 w-24 rounded"></div>
+                ) : (
+                  <p className="text-2xl font-bold">{formatCurrency(memoizedStats.totalAmount)}</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -513,7 +519,11 @@ export default function SalesHistoryPage() {
               <CreditCard className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-sm font-medium">Average Value</p>
-                <p className="text-2xl font-bold">{formatCurrency(summaryStats.averageValue)}</p>
+                {isStatsLoading ? (
+                  <div className="animate-pulse bg-gray-200 h-8 w-24 rounded"></div>
+                ) : (
+                  <p className="text-2xl font-bold">{formatCurrency(memoizedStats.averageValue)}</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -525,7 +535,11 @@ export default function SalesHistoryPage() {
               <Calendar className="h-5 w-5 text-orange-600" />
               <div>
                 <p className="text-sm font-medium">Pending Payments</p>
-                <p className="text-2xl font-bold">{summaryStats.pendingPayments}</p>
+                {isStatsLoading ? (
+                  <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
+                ) : (
+                  <p className="text-2xl font-bold">{memoizedStats.pendingPayments}</p>
+                )}
               </div>
             </div>
           </CardContent>

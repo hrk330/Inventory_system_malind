@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsEnum, IsUUID, IsArray, ValidateNested, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, IsUUID, IsArray, ValidateNested, Min, Max, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SaleType, DiscountType } from '@prisma/client';
 import { CreateSaleItemDto } from './create-sale-item.dto';
@@ -59,4 +59,21 @@ export class CreateSaleDto {
   @IsOptional()
   @IsString()
   customerNotes?: string;
+
+  @ApiProperty({ example: true, description: 'Whether this is a credit sale (customer pays later)', required: false })
+  @IsOptional()
+  @IsBoolean()
+  isCreditSale?: boolean;
+
+  @ApiProperty({ example: 100.00, description: 'Amount paid by customer', required: false, minimum: 0 })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  amountPaid?: number;
+
+  @ApiProperty({ example: 150.00, description: 'Total amount of the sale', required: false, minimum: 0 })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  totalAmount?: number;
 }

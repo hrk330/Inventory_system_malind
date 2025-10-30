@@ -52,6 +52,8 @@ export default function POSLayout({
     saleDiscount,
     subtotalAfterDiscount,
     taxAmount,
+    taxRate,
+    setTaxRate,
     totalAmount,
     addToCart,
     updateQuantity,
@@ -330,7 +332,8 @@ export default function POSLayout({
         subtotalAfterDiscount,
         taxAmount,
         totalAmount,
-        changeGiven
+        changeGiven,
+        paymentData.isCreditSale
       );
 
       // Clear cart and reset form
@@ -474,6 +477,9 @@ export default function POSLayout({
                   discount={discount}
                   onDiscountChange={setDiscount}
                   totalAmount={totalAmount}
+                  taxAmount={taxAmount}
+                  taxRate={taxRate}
+                  onTaxRateChange={setTaxRate}
                   onCompleteSale={handleCompleteSale}
                   isCompletingSale={isCompletingSale}
                   cartItemsCount={cartItems.length}
@@ -491,6 +497,7 @@ export default function POSLayout({
         onProcessPayment={handleProcessPayment}
         totalAmount={totalAmount}
         isProcessing={isCompletingSale}
+        selectedCustomer={selectedCustomer}
       />
 
       {/* Receipt Preview Modal */}

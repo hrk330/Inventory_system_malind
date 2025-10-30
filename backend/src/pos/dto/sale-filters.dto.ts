@@ -34,6 +34,11 @@ export class SaleFiltersDto extends PaginationDto {
   @IsEnum(SaleStatus)
   status?: SaleStatus;
 
+  @ApiProperty({ example: 'COMPLETED,PARTIAL', description: 'Filter by multiple sale statuses (comma-separated)', required: false })
+  @IsOptional()
+  @IsString()
+  statuses?: string;
+
   @ApiProperty({ example: 'PAID', enum: PaymentStatus, description: 'Filter by payment status', required: false })
   @IsOptional()
   @IsEnum(PaymentStatus)

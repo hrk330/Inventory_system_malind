@@ -60,10 +60,14 @@ export default function CustomerForm({
       <div className="flex items-center space-x-4">
         <div className="flex-1">
           <Select 
-            value={selectedCustomer?.id || undefined} 
+            value={selectedCustomer?.id || ''} 
             onValueChange={(value) => {
-              const customer = customers.find(c => c.id === value);
-              onCustomerSelect(customer || null);
+              if (value === 'walk_in') {
+                onCustomerSelect(null);
+              } else {
+                const customer = customers.find(c => c.id === value);
+                onCustomerSelect(customer || null);
+              }
             }}
           >
             <SelectTrigger>
@@ -106,6 +110,29 @@ export default function CustomerForm({
           />
         </div>
       </div>
+
+      {/* Customer Balance Display */}
+      {selectedCustomer && selectedCustomer.balance !== undefined && (
+        <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700">Current Balance:</span>
+            <span className={`text-sm font-bold ${
+              Number(selectedCustomer.balance) > 0 
+                ? 'text-red-600' 
+                : Number(selectedCustomer.balance) < 0 
+                ? 'text-green-600' 
+                : 'text-gray-600'
+            }`}>
+              {Number(selectedCustomer.balance) > 0 
+                ? `$${Number(selectedCustomer.balance).toFixed(2)} (Owes)` 
+                : Number(selectedCustomer.balance) < 0 
+                ? `$${Math.abs(Number(selectedCustomer.balance)).toFixed(2)} (Credit)` 
+                : '$0.00 (Paid Up)'
+              }
+            </span>
+          </div>
+        </div>
+      )}
       
       <div>
         <label className="block text-xs font-medium text-gray-900 mb-1">Address</label>

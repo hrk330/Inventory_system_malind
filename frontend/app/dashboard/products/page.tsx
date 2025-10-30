@@ -314,10 +314,15 @@ export default function ProductsPage() {
         const response = await apiClient.get(`/products?${params.toString()}`)
         console.log('✅ Products fetched successfully:', response.data)
         
-        // Update pagination info
+        // Update pagination info (fallback if meta missing)
         if (response.data.meta) {
           setTotalPages(response.data.meta.totalPages || 1)
           setTotalProducts(response.data.meta.total || 0)
+        } else {
+          const arr = Array.isArray(response.data) ? response.data : (response.data?.data || [])
+          const estimatedTotal = ((currentPage - 1) * pageSize) + (arr?.length || 0)
+          setTotalProducts(estimatedTotal)
+          setTotalPages(arr?.length === pageSize ? currentPage + 1 : currentPage)
         }
         
         return response.data

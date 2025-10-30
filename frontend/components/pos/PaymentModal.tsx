@@ -13,9 +13,11 @@ interface PaymentModalProps {
     method: string;
     amount: number;
     notes: string;
+    isCreditSale?: boolean;
   }) => Promise<void>;
   totalAmount: number;
   isProcessing: boolean;
+  selectedCustomer?: any;
 }
 
 export default function PaymentModal({
@@ -23,12 +25,14 @@ export default function PaymentModal({
   onClose,
   onProcessPayment,
   totalAmount,
-  isProcessing
+  isProcessing,
+  selectedCustomer
 }: PaymentModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'BANK_TRANSFER' | 'CHEQUE'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'BANK_TRANSFER' | 'CHEQUE' | 'CREDIT'>('CASH');
   const [amountPaid, setAmountPaid] = useState(0);
   const [changeGiven, setChangeGiven] = useState(0);
   const [saleNotes, setSaleNotes] = useState('');
+  const [isCreditSale, setIsCreditSale] = useState(false);
 
   // Calculate change when amount paid changes
   useEffect(() => {
@@ -39,15 +43,27 @@ export default function PaymentModal({
     }
   }, [amountPaid, totalAmount]);
 
+  // Handle payment method change
+  useEffect(() => {
+    if (paymentMethod === 'CREDIT') {
+      setIsCreditSale(true);
+      setAmountPaid(0);
+    } else {
+      setIsCreditSale(false);
+    }
+  }, [paymentMethod]);
+
   const handleSubmit = async () => {
-    if (amountPaid < totalAmount) {
+    // Allow partial payments or credit sales
+    if (amountPaid < totalAmount && !isCreditSale) {
       return;
     }
 
     await onProcessPayment({
       method: paymentMethod,
       amount: amountPaid,
-      notes: saleNotes
+      notes: saleNotes,
+      isCreditSale
     });
   };
 
@@ -55,6 +71,8 @@ export default function PaymentModal({
     setAmountPaid(0);
     setChangeGiven(0);
     setSaleNotes('');
+    setIsCreditSale(false);
+    setPaymentMethod('CASH');
     onClose();
   };
 
@@ -93,13 +111,18 @@ export default function PaymentModal({
                 <SelectItem value="CARD">Card</SelectItem>
                 <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
                 <SelectItem value="CHEQUE">Cheque</SelectItem>
+                {selectedCustomer && (
+                  <SelectItem value="CREDIT">Credit Sale (Pay Later)</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
 
           {/* Amount Paid */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">Amount Paid</label>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              {isCreditSale ? 'Amount Paid (Optional)' : 'Amount Paid'}
+            </label>
             <div className="flex space-x-2">
               <Input
                 type="number"
@@ -116,25 +139,34 @@ export default function PaymentModal({
                   }
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && amountPaid >= totalAmount) {
+                  if (e.key === 'Enter' && (amountPaid >= totalAmount || isCreditSale)) {
                     handleSubmit();
                   }
                 }}
-                placeholder="0.00"
+                placeholder={isCreditSale ? "0.00 (optional)" : "0.00"}
                 step="0.01"
                 min="0"
+                max={isCreditSale ? totalAmount : undefined}
                 className="flex-1"
                 autoFocus
+                disabled={isCreditSale && amountPaid === 0}
               />
-              <Button
-                onClick={() => setAmountPaid(totalAmount)}
-                variant="outline"
-                className="px-3"
-                title="Set exact amount (Enter key)"
-              >
-                Exact
-              </Button>
+              {!isCreditSale && (
+                <Button
+                  onClick={() => setAmountPaid(totalAmount)}
+                  variant="outline"
+                  className="px-3"
+                  title="Set exact amount (Enter key)"
+                >
+                  Exact
+                </Button>
+              )}
             </div>
+            {isCreditSale && (
+              <p className="text-xs text-gray-600 mt-1">
+                Customer will owe: ${(totalAmount - amountPaid).toFixed(2)}
+              </p>
+            )}
           </div>
 
           {/* Change Given */}
@@ -170,10 +202,14 @@ export default function PaymentModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={amountPaid < totalAmount || isProcessing}
-            className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed px-6 py-2"
+            disabled={(!isCreditSale && amountPaid < totalAmount) || isProcessing || amountPaid < 0}
+            className={`px-6 py-2 ${
+              isCreditSale 
+                ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            } disabled:bg-gray-300 disabled:cursor-not-allowed`}
           >
-            {isProcessing ? 'Processing...' : 'Complete Sale'}
+            {isProcessing ? 'Processing...' : isCreditSale ? 'Complete Credit Sale' : 'Complete Sale'}
           </Button>
         </div>
       </div>

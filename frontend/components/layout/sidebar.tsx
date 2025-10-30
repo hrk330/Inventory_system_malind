@@ -28,6 +28,10 @@ import {
   ShoppingCart,
   Receipt,
   Users,
+  RotateCcw,
+  LayoutDashboard,
+  PackageSearch,
+  History,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { signOut } from 'next-auth/react'
@@ -44,8 +48,18 @@ const navigation = [
     submenu: [
       { name: 'Point of Sale', href: '/pos', icon: ShoppingCart },
       { name: 'Sales History', href: '/dashboard/pos/history', icon: Receipt },
-      { name: 'Customers', href: '/dashboard/customers', icon: Users },
+      { name: 'Credit Sales', href: '/dashboard/pos/credit-sales', icon: CreditCard },
       { name: 'Reports', href: '/dashboard/pos/reports', icon: BarChart3 },
+    ]
+  },
+  { 
+    name: 'Customers', 
+    href: '/dashboard/customers', 
+    icon: Users,
+    hasSubmenu: true,
+    submenu: [
+      { name: 'Customer List', href: '/dashboard/customers', icon: Users },
+      { name: 'Customer Ledger', href: '/dashboard/customers/ledger', icon: FileText },
     ]
   },
   { 
@@ -58,12 +72,29 @@ const navigation = [
           { name: 'Add Product', href: '/dashboard/products/add', icon: Plus },
           { name: 'Bulk Import', href: '/dashboard/products/bulk-import', icon: Upload },
           { name: 'Import History', href: '/dashboard/products/bulk-import-history', icon: FileText },
+          { name: 'Companies', href: '/dashboard/products/companies', icon: Tag },
           { name: 'Categories', href: '/dashboard/products/categories', icon: Tag },
           { name: 'UOMs', href: '/dashboard/products/uoms', icon: Ruler },
           { name: 'Deleted Products', href: '/dashboard/products/deleted', icon: Trash2 },
         ]
   },
   { name: 'Suppliers', href: '/dashboard/suppliers', icon: Truck },
+  { 
+    name: 'Purchases', 
+    href: '/dashboard/purchases', 
+    icon: Package,
+    hasSubmenu: true,
+    submenu: [
+      { name: 'Dashboard', href: '/dashboard/purchases/dashboard', icon: LayoutDashboard },
+      { name: 'Purchase Orders', href: '/dashboard/purchases', icon: PackageSearch },
+      { name: 'Add Purchase', href: '/dashboard/purchases/add', icon: Plus },
+      { name: 'Purchase History', href: '/dashboard/purchases/history', icon: History },
+      { name: 'Purchase Returns', href: '/dashboard/purchases/returns', icon: RotateCcw },
+      { name: 'Return List', href: '/dashboard/purchases/returns/list', icon: RotateCcw },
+      { name: 'Purchase Reports', href: '/dashboard/purchases/reports', icon: BarChart3 },
+      { name: 'Supplier Ledger', href: '/dashboard/purchases/supplier-ledger', icon: FileText },
+    ]
+  },
   { name: 'Locations', href: '/dashboard/locations', icon: MapPin },
   { name: 'Stock Balances', href: '/dashboard/balances', icon: ClipboardList },
   { name: 'Transactions', href: '/dashboard/transactions', icon: ArrowLeftRight },
@@ -76,7 +107,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { isOpen, toggleSidebar } = useSidebar()
-  const [expandedItems, setExpandedItems] = useState<string[]>(['POS', 'Products'])
+  const [expandedItems, setExpandedItems] = useState<string[]>(['POS', 'Products', 'Purchases'])
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => 

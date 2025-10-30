@@ -206,6 +206,112 @@ export class CustomersService {
     };
   }
 
+  async getLedgerOverview(search?: string) {
+    const where: any = {
+      isActive: true,
+    };
+
+    // Apply search filter
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { customerNumber: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const customers = await this.prisma.customer.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        customerNumber: true,
+        address: true,
+        balance: true,
+        totalPurchases: true,
+        lastPurchaseDate: true,
+        sales: {
+          select: {
+            id: true,
+            totalAmount: true,
+            amountPaid: true,
+            status: true,
+            saleDate: true,
+            customerPayments: {
+              select: {
+                amount: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    // Pull refunds for all these customers in one query to avoid N+1
+    const customerIds = customers.map(c => c.id);
+    const refunds = await this.prisma.saleRefund.findMany({
+      where: {
+        originalSale: {
+          customerId: { in: customerIds },
+        },
+      },
+      select: {
+        refundAmount: true,
+        originalSale: { select: { customerId: true } },
+      },
+    });
+
+    const customerIdToRefundTotal = new Map<string, number>();
+    for (const r of refunds) {
+      const cid = r.originalSale.customerId;
+      customerIdToRefundTotal.set(cid, (customerIdToRefundTotal.get(cid) || 0) + Number(r.refundAmount));
+    }
+
+    return customers.map(customer => {
+      // Mirror detailed ledger calculation:
+      // - Sum sales totalAmount (all statuses) to match transaction list
+      // - Compute totalPaid via hybrid approach
+      // - Subtract refunds
+
+      const totalSales = customer.sales.reduce((sum, sale) => sum + Number(sale.totalAmount), 0);
+
+      const totalPaidFromPayments = customer.sales.reduce((sum, sale) => {
+        return sum + sale.customerPayments.reduce((paymentSum, payment) => {
+          return paymentSum + Number(payment.amount);
+        }, 0);
+      }, 0);
+
+      const totalAmountPaid = customer.sales.reduce((sum, sale) => sum + Number(sale.amountPaid), 0);
+      const totalPaid = Math.max(totalPaidFromPayments, totalAmountPaid);
+
+      const totalRefunds = customerIdToRefundTotal.get(customer.id) || 0;
+      const currentBalance = totalSales - totalPaid - totalRefunds;
+
+      const lastTransactionDate = customer.sales.length > 0 
+        ? customer.sales.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime())[0].saleDate
+        : customer.lastPurchaseDate;
+
+      return {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        customerNumber: customer.customerNumber,
+        address: customer.address,
+        balance: currentBalance,
+        totalSales,
+        totalPaid,
+        totalRefunds,
+        lastTransactionDate,
+        transactionCount: customer.sales.length,
+      };
+    });
+  }
+
   async searchCustomers(query: string) {
     return this.prisma.customer.findMany({
       where: {

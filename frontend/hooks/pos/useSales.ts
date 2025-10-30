@@ -15,6 +15,9 @@ export interface SaleData {
   discountType: string;
   discountValue: number;
   notes: string;
+  isCreditSale?: boolean;
+  amountPaid?: number;
+  totalAmount?: number;
 }
 
 export const useSales = () => {
@@ -40,9 +43,11 @@ export const useSales = () => {
     subtotalAfterDiscount: number,
     taxAmount: number,
     totalAmount: number,
-    changeGiven: number
+    changeGiven: number,
+    isCreditSale: boolean = false
   ) => {
-    if (amountPaid < totalAmount) {
+    // Allow partial payments for credit sales or when customer is selected
+    if (!isCreditSale && amountPaid < totalAmount && !selectedCustomer) {
       toast.error('Amount paid is less than total amount');
       return;
     }
@@ -125,16 +130,19 @@ export const useSales = () => {
           itemDiscountRate: 0,
           notes: ''
         })),
-        payments: [{
+        payments: amountPaid > 0 ? [{
           paymentMethod: paymentMethod,
           amount: amountPaid,
           referenceNumber: paymentMethod === 'CARD' ? 'CARD' + Date.now().toString().slice(-4) : undefined,
           notes: saleNotes
-        }],
+        }] : [],
         taxRate: taxRate,
         discountType: discount.type,
         discountValue: discount.value,
-        notes: saleNotes
+        notes: saleNotes,
+        isCreditSale: isCreditSale,
+        amountPaid: amountPaid,
+        totalAmount: totalAmount
       };
 
       console.log('Creating sale with data:', saleData);
